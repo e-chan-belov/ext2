@@ -89,12 +89,20 @@ void free_blocks(struct ext2_file_system *me, void *ptr, __u32 count) {
 }
 
 // returns a copy of the requested inode structure VERY UNSAFE CODE !!!!!!!!!!!!!!!!!!!
-struct inode locate_a_local_inode(struct ext2_file_system *me, __u32 inode_id) {
-    __u32 block_group_index = (inode_id - 1) / me->sb.s_inodes_per_group;
-    __u32 local_inode_index = (inode_id - 1) % me->sb.s_inodes_per_group;
+struct inode read_inode(struct ext2_file_system *me, __u32 inode) {
+    __u32 block_group_index = (inode - 1) / me->sb.s_inodes_per_group;
+    __u32 local_inode_index = (inode - 1) % me->sb.s_inodes_per_group;
     __u32 id = me->bgdt[block_group_index].bg_inode_table + local_inode_index / (me->block_size / me->sb.s_inode_size);
     void *ptr = block_alloc(me, id);
     struct inode temp = *(struct inode*)(ptr + me->sb.s_inode_size * (local_inode_index % (me->block_size / me->sb.s_inode_size)));
     free_block(me, ptr);
     return temp;
+}
+
+int put_inode(struct ext2_file_system *me, struct inode inode_, __u32 inode_dir_id) {
+    return 0;
+}
+
+int delete_inode(struct ext2_file_system *me, __u32 inode) {
+    return 0;
 }

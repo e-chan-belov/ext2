@@ -1,6 +1,7 @@
 #pragma once 
 
 #include "types.h"
+#include "file.h"
 
 /*
  * Since EXT2 structures are
