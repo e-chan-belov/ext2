@@ -27,7 +27,7 @@ struct super_block {
     __u32 s_rev_level; /* Revision level */
     __u16 s_def_resuid; /* Default uid for reserved blocks*/
     __u16 s_def_resgid; /* Default gid for reserved blocks */
-    __u32 s_first_ino; /* index to the first inode */
+    __u32 s_first_ino; /* index to the first inode useable for standard files */
     __u16 s_inode_size; /* size of the inode structure */
     __u16 s_block_group_nr; /* block group number hosting this superblock structure */
     __u32 s_feature_compat; /* bitmask of compatible features */

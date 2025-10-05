@@ -28,7 +28,7 @@ int main() {
 
     debug_bgdt(current.bgdt[0]);
 
-    struct inode first = read_inode(&current, current.sb.s_first_ino);
+    struct inode first = read_inode(&current, 2);
     debug_inode(first);
 
     ext2_file_system_destroy(&current);
