@@ -1,0 +1,33 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdint.h>
+#include <sys/mman.h>
+
+#include "super_block.h"
+#include "bgdt.h"
+#include "inode.h"
+#include "types.h"
+#include "dir.h"
+#include "debug.h"
+#include "ext2_fs.h"
+
+
+
+
+int main() {
+    struct ext2_file_system current;
+    int err = ext2_file_system_init(&current, "/mnt/disk.img");
+    if (err < 0) { return -1; }
+
+    debug_super_block(current.first_super_block);
+
+    debug_bgdt(current.bgdt[0]);
+
+    struct inode first = *(locate_a_local_inode(&current, current.first_super_block.s_first_ino));
+    debug_inode(first);
+
+    ext2_file_system_destroy(&current);
+    return 0;
+}
