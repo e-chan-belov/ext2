@@ -12,15 +12,10 @@
 #include "bgdt.h"
 #include "inode.h"
 
-struct virtual_disk_info {
-    int fd;
-    int ln;
-};
 
 struct ext2_file_system {
-    struct virtual_disk_info vd_info;
-    void* pointer_to_first_block;
-    struct super_block first_super_block;
+    int fd;
+    struct super_block sb;
     __u32 block_size;
     struct block_group_descriptor_table* bgdt;
     __u32 groups_count;
@@ -28,36 +23,78 @@ struct ext2_file_system {
 
 int ext2_file_system_init(struct ext2_file_system *me, const char *file) {
     int fd = open(file, O_RDONLY);
-    if (fd < 0) { return -1; }
-    int ln = lseek(fd, 0, SEEK_END);
-    if (ln < 0) { return -2; }
-    void *ptr = mmap(NULL, ln, PROT_READ, MAP_PRIVATE, fd, 0);
-    if (ptr == MAP_FAILED) { return -3; }
 
-    me->vd_info.fd = fd;
-    me->vd_info.ln = ln;
-    me->pointer_to_first_block = ptr;
-    me->first_super_block = *(struct super_block*)(me->pointer_to_first_block + 1024);
-    me->block_size = get_block_size(&me->first_super_block);
-    me->bgdt = (struct block_group_descriptor_table*)(me->pointer_to_first_block + me->block_size);
-    me->groups_count = CEIL_DIV(me->first_super_block.s_blocks_count, me->first_super_block.s_blocks_per_group);
+    int err;
+    err = lseek(fd, 0, SEEK_SET);
+    if (err < 0) {
+        return -1;
+    }
+    void *ptr = mmap(NULL, 2048, PROT_READ, MAP_PRIVATE, fd, 0);
+    if (ptr == MAP_FAILED) {
+        return -2;
+    }
+
+    me->fd = fd;
+    me->sb = *(struct super_block*)(ptr + 1024);
+
+    err = munmap(ptr, 1024);
+    if (err < 0) {
+        return -3;
+    }
+
+    me->block_size = get_block_size(&me->sb);
+    me->groups_count = CEIL_DIV(me->sb.s_blocks_count, me->sb.s_blocks_per_group);
+
+    int sz = me->groups_count * me->block_size;
+    me->bgdt = malloc(sizeof(struct block_group_descriptor_table) * me->groups_count);
+    ptr = mmap(NULL, sz, PROT_READ, MAP_PRIVATE, fd, me->block_size); // THIS MAY CAUSE MAP_FAILED!!!!!
+    if (ptr == MAP_FAILED) {
+        return -4;
+    }
+
+    void *tmp_ptr = ptr;
+    int i;
+    for (i = 0; i < me->groups_count; i++, tmp_ptr += me->block_size) {
+        me->bgdt[i] = *(struct block_group_descriptor_table*)tmp_ptr;
+    }
+
+    err = munmap(ptr, sz);
+    if (err < 0) {
+        return -5;
+    }
     return 0;
 }
 
 void ext2_file_system_destroy(struct ext2_file_system *me) {
-    munmap(me->pointer_to_first_block, me->vd_info.ln);
-    close(me->vd_info.fd);
+    free(me->bgdt);
+    close(me->fd);
 }
 
-// returns a pointer to the requested inode structure PLEASE DEBUG
-struct inode* locate_a_local_inode(struct ext2_file_system *me, __u32 inode) {
-    __u32 block_group_index = (inode - 1) / me->first_super_block.s_inodes_per_group;
-    void* ptr_first_byte_requested_group = me->pointer_to_first_block + me->block_size * me->first_super_block.s_blocks_per_group * block_group_index;
-    __u32 local_inode_index = (inode - 1) % me->first_super_block.s_inodes_per_group;
-    void* ptr_inode_table = (struct inode*)(ptr_first_byte_requested_group + me->bgdt[block_group_index].bg_inode_table * me->block_size);
-    return ptr_inode_table + local_inode_index * me->first_super_block.s_inode_size;
+// VERY UNSAFE CODE !!!!!!!!!!!!!!!!
+void* block_alloc(struct ext2_file_system *me, __u32 id) {
+    void *ptr = mmap(NULL, me->block_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, me->fd, me->block_size * id);
+    return ptr;
 }
 
-void* locate_block_group_by_index(struct ext2_file_system *me,__u32 block_group_index) {
-    return me->pointer_to_first_block + block_group_index * me->first_super_block.s_blocks_per_group * get_block_size(me->pointer_to_first_block);
+void* block_malloc(struct ext2_file_system *me, __u32 first_id, __u32 count) {
+    void *ptr = mmap(NULL, me->block_size * count, PROT_READ | PROT_WRITE, MAP_PRIVATE, me->fd, me->block_size * first_id);
+}
+
+void free_block(struct ext2_file_system *me, void *ptr) {
+    munmap(ptr, me->block_size);
+}
+
+void free_blocks(struct ext2_file_system *me, void *ptr, __u32 count) {
+    munmap(ptr, me->block_size * count);
+}
+
+// returns a copy of the requested inode structure VERY UNSAFE CODE !!!!!!!!!!!!!!!!!!!
+struct inode locate_a_local_inode(struct ext2_file_system *me, __u32 inode_id) {
+    __u32 block_group_index = (inode_id - 1) / me->sb.s_inodes_per_group;
+    __u32 local_inode_index = (inode_id - 1) % me->sb.s_inodes_per_group;
+    __u32 id = me->bgdt[block_group_index].bg_inode_table + local_inode_index / (me->block_size / me->sb.s_inode_size);
+    void *ptr = block_alloc(me, id);
+    struct inode temp = *(struct inode*)(ptr + me->sb.s_inode_size * (local_inode_index % (me->block_size / me->sb.s_inode_size)));
+    free_block(me, ptr);
+    return temp;
 }

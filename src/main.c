@@ -19,13 +19,16 @@
 int main() {
     struct ext2_file_system current;
     int err = ext2_file_system_init(&current, "/mnt/disk.img");
-    if (err < 0) { return -1; }
+    if (err < 0) { 
+        printf("%d\n", err);
+        return err; 
+    }
 
-    debug_super_block(current.first_super_block);
+    debug_super_block(current.sb);
 
     debug_bgdt(current.bgdt[0]);
 
-    struct inode first = *(locate_a_local_inode(&current, current.first_super_block.s_first_ino));
+    struct inode first = locate_a_local_inode(&current, current.sb.s_first_ino);
     debug_inode(first);
 
     ext2_file_system_destroy(&current);

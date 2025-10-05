@@ -1,6 +1,5 @@
 #pragma once
 #include "types.h"
-#include "ext2_fs.h"
 #include "super_block.h"
 
 #define S_IFSOCK 0xC000  // socket
