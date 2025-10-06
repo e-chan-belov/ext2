@@ -25,8 +25,13 @@ int main() {
     }
 
     debug_super_block(current.sb);
-
-    debug_bgdt(current.bgdt[0]);
+    printf("current.groups_count: %u\n", current.groups_count);
+    int i;
+    for (i = 0; i < current.groups_count; i++) {
+        printf("Block Group Descriptor number: %u\n", i);
+        debug_bgdt(current.bgdt[i]);
+    }
+    
 
     struct inode first = read_inode(&current, 2);
     debug_inode(first);

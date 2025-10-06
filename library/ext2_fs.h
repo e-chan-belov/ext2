@@ -52,10 +52,10 @@ int ext2_file_system_init(struct ext2_file_system *me, const char *file) {
         return -4;
     }
 
-    void *tmp_ptr = ptr;
+    struct block_group_descriptor_table*tmp_ptr = ptr;
     int i;
-    for (i = 0; i < me->groups_count; i++, tmp_ptr += me->block_size) {
-        me->bgdt[i] = *(struct block_group_descriptor_table*)tmp_ptr;
+    for (i = 0; i < me->groups_count; i++, tmp_ptr++) {
+        me->bgdt[i] = *tmp_ptr;
     }
 
     err = munmap(ptr, sz);
