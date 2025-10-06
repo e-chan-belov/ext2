@@ -4,6 +4,7 @@
 #include "super_block.h"
 #include "bgdt.h"
 #include "inode.h"
+#include "dir.h"
 
 void debug_super_block(struct super_block sb) {
     printf("s_inodes_count: %u\n", sb.s_inodes_count);
@@ -125,4 +126,22 @@ void debug_inode(struct inode node) {
         printf("%02x", node.i_osd2[i]);
     }
     printf("\n");
+}
+
+void debug_ext2_dir_entry(struct ext2_dir_entry *entry) {
+    printf("inode: %u\n", entry->inode);
+    printf("rec_len: %u\n", entry->rec_len);
+    printf("name_len: %u\n", entry->name_len);
+    printf("file_type: %u\n", entry->file_type);
+    
+    printf("name: ");
+    int i;
+    for (i = 0; i < entry->name_len; i++) {
+        printf("%c", entry->name[i]);
+    }
+    printf("\n");
+    
+    if (entry->name_len > 0 && entry->name[entry->name_len - 1] == '\0') {
+        printf("name (as string): %s\n", entry->name);
+    }
 }

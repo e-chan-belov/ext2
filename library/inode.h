@@ -2,7 +2,7 @@
 #include "types.h"
 #include "super_block.h"
 
-#define S_IFSOCK 0xC000  // socket
+/*#define S_IFSOCK 0xC000  // socket
 #define S_IFLNK  0xA000  // symbolic link
 #define S_IFREG  0x8000  // regular file
 #define S_IFBLK  0x6000  // block device
@@ -33,6 +33,7 @@
 #define S_IROTH 0x0004  // others read
 #define S_IWOTH 0x0002  // others write
 #define S_IXOTH 0x0001  // others execute
+*/
 
 struct inode {
     __u16 i_mode; /* File mode */
