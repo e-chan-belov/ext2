@@ -56,3 +56,6 @@ struct inode {
     __u8  i_osd2[12]; /* OS dependent 2 */
 };
 
+int is_dir(struct inode *inode) {
+    return (((inode->i_mode & 0xF000) & 0x4000) == 0x4000);
+}

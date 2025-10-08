@@ -39,8 +39,11 @@ int main() {
     struct file root;
     file_init(&root, &current, 2);
     read_open_file(&root);
-    struct ext2_dir_entry *dir = (struct ext2_dir_entry*)(root.ptr);
-    debug_ext2_dir_entry(dir);
+    struct dir dir;
+    if (dir_init(&dir, &root) < 0) { return -1; }
+    next_entry(&dir);
+    next_entry(&dir);
+    debug_ext2_dir_entry(dir.current_entry);
     close_file(&root);
 
     ext2_file_system_destroy(&current);

@@ -16,3 +16,27 @@ struct ext2_dir_entry {
 	__u8	file_type;
 	char	name[];			/* File name, up to EXT2_NAME_LEN */
 };
+
+struct dir {
+	struct file *file;
+	struct ext2_dir_entry *current_entry;
+};
+
+int dir_init(struct dir *dir, struct file *file) {
+	if (!is_dir(&(file->inode))) { return -1; }
+	dir->file = file;
+	dir->current_entry = file->ptr;
+	return 0;
+}
+
+struct ext2_dir_entry get_current_entry(struct dir *dir) {
+	return *(dir->current_entry);
+}
+
+int next_entry(struct dir *dir) {
+	void *ptr = (void*)dir->current_entry;
+	__u32 offset = dir->current_entry->rec_len;
+	if (((ptr + offset) - dir->file->ptr) >= dir->file->inode.i_size) { return -1; }
+	dir->current_entry = (struct ext2_dir_entry*)(ptr + offset);
+	return 0;
+}
