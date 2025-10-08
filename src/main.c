@@ -33,7 +33,7 @@ int main() {
     }
     
 
-    struct inode first = read_inode(&current, 2);
+    struct inode first = read_inode(&current, 25603);
     debug_inode(first);
 
     struct file root;
@@ -43,8 +43,16 @@ int main() {
     if (dir_init(&dir, &root) < 0) { return -1; }
     next_entry(&dir);
     next_entry(&dir);
+    next_entry(&dir);
+    next_entry(&dir);
+    next_entry(&dir);
     debug_ext2_dir_entry(dir.current_entry);
     close_file(&root);
+
+    int ans = is_block_used(&current, 34387);
+    printf("%d\n", ans);
+    ans = is_inode_used(&current, 25604);
+    printf("%d\n", ans);
 
     ext2_file_system_destroy(&current);
     return 0;

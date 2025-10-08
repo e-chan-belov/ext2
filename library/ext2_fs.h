@@ -99,6 +99,24 @@ struct inode read_inode(struct ext2_file_system *me, __u32 inode) {
     return temp;
 }
 
+__u8 is_block_used(struct ext2_file_system *fs, __u32 id) {
+    __u32 group = id / fs->sb.s_blocks_per_group;
+    id = id % fs->sb.s_blocks_per_group;
+    void *bitmap = block_alloc(fs, fs->bgdt[group].bg_block_bitmap);
+    __u8 ans = !!(*(__u8*)(bitmap + id / 8) & (1 << id % 8));
+    free_block(fs, bitmap);
+    return ans;
+}
+
+__u8 is_inode_used(struct ext2_file_system *fs, __u32 id) {
+    __u32 group = (id - 1) / fs->sb.s_inodes_per_group;
+    id = (id - 1) % fs->sb.s_inodes_per_group;
+    void *bitmap = block_alloc(fs, fs->bgdt[group].bg_inode_bitmap);
+    __u8 ans = !!(*(__u8*)(bitmap + id / 8) & (1 << id % 8));
+    free_block(fs, bitmap);
+    return ans;
+}
+
 int put_inode(struct ext2_file_system *me, struct inode inode_, __u32 inode_dir_id) {
     return 0;
 }
