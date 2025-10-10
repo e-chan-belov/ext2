@@ -145,3 +145,15 @@ void debug_ext2_dir_entry(struct ext2_dir_entry *entry) {
         printf("name (as string): %s\n", entry->name);
     }
 }
+
+void* debug_via_mmap(int fd, __u32 size, __u32 offset) {
+    void* ptr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, offset);
+    if (ptr == MAP_FAILED) { printf("debug_via_mmap FAILURE at %u size and %u offset!!!\n", size, offset); }
+    return ptr;
+}
+
+int free_debug_via_mmap(void* ptr, __u32 size) {
+    int err = munmap(ptr, size);
+    if (err < 0) { printf("free_debug_via_mmap FAILURE with %u code at %u\n", err, size); return err; }
+    return 0;
+}

@@ -87,7 +87,7 @@ int read_open_file(struct file *f) {
                     return 0;
                 }
                 block_ptr = block_alloc(f->fs, block_id);
-                memcpy(f->ptr + (12 + address_count * address_count + i) * f->fs->block_size, block_ptr, f->fs->block_size); // todo
+                memcpy(f->ptr + (12 + address_count + address_count * address_count + i) * f->fs->block_size, block_ptr, f->fs->block_size); // todo
                 free_block(f->fs, block_ptr);
             }
             free_block(f->fs, first_indirect_block);
