@@ -22,13 +22,9 @@ struct ext2_file_system {
 };
 
 int ext2_file_system_init(struct ext2_file_system *me, const char *file) {
-    int fd = open(file, O_RDONLY);
+    int fd = open(file, O_RDWR);
 
     int err;
-    err = lseek(fd, 0, SEEK_SET);
-    if (err < 0) {
-        return -1;
-    }
     void *ptr = mmap(NULL, 2048, PROT_READ, MAP_PRIVATE, fd, 0);
     if (ptr == MAP_FAILED) {
         return -2;

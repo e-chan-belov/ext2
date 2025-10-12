@@ -49,11 +49,9 @@ int main() {
     debug_ext2_dir_entry(dir.current_entry);
     close_file(&root);
 
-    int ans = is_block_used(&current, 34387);
-    printf("%d\n", ans);
-    ans = is_inode_used(&current, 25604);
-    printf("%d\n", ans);
-
+    struct super_block temp;
+    temp = *(struct super_block*)debug_via_mmap(current.fd, 1024, current.sb.s_blocks_per_group * current.block_size);
+    debug_super_block(temp);
     ext2_file_system_destroy(&current);
     return 0;
 }
