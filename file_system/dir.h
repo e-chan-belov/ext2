@@ -2,6 +2,7 @@
 /*
 #include "types.h"
 #include "file.h"
+#include "virtual_node.h"
 
 
  //* Since EXT2 structures are
@@ -41,3 +42,5 @@ int next_entry(struct dir *dir) {
 	return 0;
 }
 */
+
+struct dir {};

@@ -1,13 +1,13 @@
 #include "ext2_fs.h"
 
-int ext2_file_system_create(const char *file) {
+__u32 ext2_file_system_create(const char *file) {
     return 0;
 }
 
-int ext2_file_system_init(struct ext2_file_system *me, const char *file) {
-    int fd = open(file, O_RDWR);
+__u32 ext2_file_system_init(struct ext2_file_system *me, const char *file) {
+    __u32 fd = open(file, O_RDWR);
 
-    int err;
+    __u32 err;
     void *ptr = mmap(NULL, 2048, PROT_READ, MAP_PRIVATE, fd, 0);
     if (ptr == MAP_FAILED) {
         return -2;
@@ -24,7 +24,7 @@ int ext2_file_system_init(struct ext2_file_system *me, const char *file) {
     me->block_size = get_block_size(&me->sb);
     me->groups_count = CEIL_DIV(me->sb.s_blocks_count, me->sb.s_blocks_per_group);
 
-    int sz = me->groups_count * sizeof(struct block_group_descriptor);
+    __u32 sz = me->groups_count * sizeof(struct block_group_descriptor);
     me->bgdt = malloc(sz);
     ptr = mmap(NULL, sz, PROT_READ, MAP_PRIVATE, fd, me->block_size); // THIS MAY CAUSE MAP_FAILED!!!!!
     if (ptr == MAP_FAILED) {
@@ -32,7 +32,7 @@ int ext2_file_system_init(struct ext2_file_system *me, const char *file) {
     }
 
     struct block_group_descriptor *tmp_ptr = ptr;
-    int i;
+    __u32 i;
     for (i = 0; i < me->groups_count; i++, tmp_ptr++) {
         me->bgdt[i] = *tmp_ptr;
     }
@@ -87,10 +87,10 @@ __u8 is_inode_used(struct ext2_file_system *fs, __u32 id) {
     return ans;
 }
 
-int put_inode(struct ext2_file_system *me, struct inode inode_, __u32 inode_dir_id) {
+__u32 put_inode(struct ext2_file_system *me, struct inode inode_, __u32 inode_dir_id) {
     return 0;
 }
 
-int delete_inode(struct ext2_file_system *me, __u32 inode) {
+__u32 delete_inode(struct ext2_file_system *me, __u32 inode) {
     return 0;
 }

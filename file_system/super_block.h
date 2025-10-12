@@ -34,8 +34,8 @@ struct super_block {
     __u32 s_feature_incompat; /* bitmask of incompatible features */
     __u32 s_feature_ro_compat; /* bitmask of “read-only” features */
     __u8 s_uuid[16]; /* value used as the volume id */
-    __u16 s_volume_name; /* volume name, mostly unusued */
-    __u8 s_last_mounted[8]; /* directory path where the file system was last mounted */
+    __u8 s_volume_name[16]; /* volume name, mostly unusued */
+    __u8 s_last_mounted[64]; /* directory path where the file system was last mounted */
     __u32 s_algo_bitmap; /* value used by compression algorithms to determine the compression method(s) used */
     __u8 s_prealloc_blocks; /* representing the number of blocks the implementation should attempt to pre-allocate when creating a new regular file */
     __u8 s_prealloc_dir_blocks; /* value representing the number of blocks the implementation should attempt to pre-allocate when creating a new directory */

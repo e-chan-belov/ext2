@@ -29,7 +29,7 @@ int main() {
     }
     
 
-    struct inode first = read_inode(&current, 25603);
+    struct inode first = read_inode(&current, 2);
     debug_inode(first);
 /*
     struct file root;

@@ -45,12 +45,18 @@ void debug_super_block(struct super_block sb) {
         printf("%02x", sb.s_uuid[i]);
     }
     printf("\n");
+
+    printf("s_volume_name: ");
+    for (i = 0; i < 16; i++) {
+        printf("%c", sb.s_volume_name[i]);
+    }
+    printf("\n");
     
-    printf("s_volume_name: %u\n", sb.s_volume_name);
+    
     
     printf("s_last_mounted: ");
-    for(i = 0; i < 8; i++) {
-        printf("%02x", sb.s_last_mounted[i]);
+    for(i = 0; i < 64; i++) {
+        printf("%c", sb.s_last_mounted[i]);
     }
     printf("\n");
     
