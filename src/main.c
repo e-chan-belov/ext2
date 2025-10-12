@@ -1,16 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <stdint.h>
-#include <sys/mman.h>
 
-#include "super_block.h"
+
 #include "bgdt.h"
 #include "inode.h"
 #include "types.h"
 #include "dir.h"
-#include "debug.h"
+#include "fs_debug.h"
 #include "ext2_fs.h"
 
 
@@ -35,7 +31,7 @@ int main() {
 
     struct inode first = read_inode(&current, 25603);
     debug_inode(first);
-
+/*
     struct file root;
     file_init(&root, &current, 2);
     read_open_file(&root);
@@ -47,7 +43,7 @@ int main() {
     next_entry(&dir);
     next_entry(&dir);
     debug_ext2_dir_entry(dir.current_entry);
-    close_file(&root);
+    close_file(&root);*/
 
     struct super_block temp;
     temp = *(struct super_block*)debug_via_mmap(current.fd, 1024, current.sb.s_blocks_per_group * current.block_size);

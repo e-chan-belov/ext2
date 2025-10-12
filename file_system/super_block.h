@@ -49,15 +49,6 @@ struct super_block {
     __u32 s_first_meta_bg; /* MAYBE UNUSED!!! indicating the block group ID of the first meta block group */
 };
 
-__u32 get_block_size(struct super_block *sb) {
-    return 1024 << sb->s_log_block_size;
-}
+__u32 get_block_size(struct super_block *sb);
 
-__u32 get_frag_size(struct super_block *sb) {
-    if (sb->s_log_frag_size > 0) {
-        return 1024 << sb->s_log_frag_size;
-    }
-    else {
-        return 1024 >> -sb->s_log_frag_size;
-    }
-}
+__u32 get_frag_size(struct super_block *sb);

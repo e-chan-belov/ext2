@@ -55,7 +55,3 @@ struct inode {
     __u32 i_faddr; /* Fragment address */
     __u8  i_osd2[12]; /* OS dependent 2 */
 };
-
-__u32 is_dir(struct inode *inode) {
-    return (((inode->i_mode & 0xF000) & 0x4000) == 0x4000);
-}

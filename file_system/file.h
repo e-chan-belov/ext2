@@ -1,5 +1,5 @@
 #pragma once
-
+/*
 #include <string.h>
 #include "inode.h"
 #include "ext2_fs.h"
@@ -100,4 +100,4 @@ int read_open_file(struct file *f) {
 
 void close_file(struct file *f) {
     free(f->ptr);
-}
+}*/

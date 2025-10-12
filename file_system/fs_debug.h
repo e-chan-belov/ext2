@@ -1,5 +1,5 @@
 #pragma once
-
+#include <sys/mman.h>
 
 #include "super_block.h"
 #include "bgdt.h"
@@ -127,7 +127,7 @@ void debug_inode(struct inode node) {
     }
     printf("\n");
 }
-
+/*
 void debug_ext2_dir_entry(struct ext2_dir_entry *entry) {
     printf("inode: %u\n", entry->inode);
     printf("rec_len: %u\n", entry->rec_len);
@@ -144,7 +144,7 @@ void debug_ext2_dir_entry(struct ext2_dir_entry *entry) {
     if (entry->name_len > 0 && entry->name[entry->name_len - 1] == '\0') {
         printf("name (as string): %s\n", entry->name);
     }
-}
+}*/
 
 void* debug_via_mmap(int fd, __u32 size, __u32 offset) {
     void* ptr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, offset);

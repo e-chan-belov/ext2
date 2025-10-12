@@ -1,20 +1,20 @@
 #pragma once 
-
+/*
 #include "types.h"
 #include "file.h"
 
-/*
- * Since EXT2 structures are
- * stored in intel byte order, and the name_len field could never be
- * bigger than 255 chars, it's safe to reclaim the extra byte for the
- * file_type field.
- */
+
+ //* Since EXT2 structures are
+ //* stored in intel byte order, and the name_len field could never be
+ //* bigger than 255 chars, it's safe to reclaim the extra byte for the
+ //* file_type field.
+ 
 struct ext2_dir_entry {
-	__u32	inode;			/* Inode number */
-	__u16	rec_len;		/* Directory entry length */
-	__u8	name_len;		/* Name length */
+	__u32	inode;			// Inode number 
+	__u16	rec_len;		// Directory entry length
+	__u8	name_len;		// Name length 
 	__u8	file_type;
-	char	name[];			/* File name, up to EXT2_NAME_LEN */
+	char	name[];			// File name, up to EXT2_NAME_LEN
 };
 
 struct dir {
@@ -40,3 +40,4 @@ int next_entry(struct dir *dir) {
 	dir->current_entry = (struct ext2_dir_entry*)(ptr + offset);
 	return 0;
 }
+*/
