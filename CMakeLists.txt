@@ -5,10 +5,16 @@ project(${PROJECT_NAME})
 
 set(CMAKE_C_STANDARD 90)
 
-add_subdirectory(library)
+include_directories(file_system)
+include_directories(VFS)
+
 add_subdirectory(src)
 
 add_executable(app 
     src/main.c)
 
-    target_link_libraries(app PRIVATE library)
+add_subdirectory(file_system)
+add_subdirectory(VFS)
+
+target_link_libraries(app PRIVATE file_system)
+target_link_libraries(app PRIVATE VFS)
