@@ -1,7 +1,7 @@
 #pragma once
 #include "types.h"
 
-struct block_group_descriptor_table {
+struct block_group_descriptor {
     __u32 bg_block_bitmap; /* block id of the first block of the “block bitmap” for the group represented. */
     __u32 bg_inode_bitmap; /* block id of the first block of the “inode bitmap” for the group represented */
     __u32 bg_inode_table; /* block id of the first block of the “inode table” for the group represented */

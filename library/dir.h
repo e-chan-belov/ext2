@@ -23,7 +23,7 @@ struct dir {
 };
 
 int dir_init(struct dir *dir, struct file *file) {
-	if (!is_dir(&(file->inode))) { return -1; }
+	if (!IS_DIR(file->inode.i_mode)) { return -1; }
 	dir->file = file;
 	dir->current_entry = file->ptr;
 	return 0;

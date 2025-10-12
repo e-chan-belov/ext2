@@ -17,7 +17,7 @@ struct ext2_file_system {
     int fd;
     struct super_block sb;
     __u32 block_size;
-    struct block_group_descriptor_table* bgdt;
+    struct block_group_descriptor* bgdt;
     __u32 groups_count;
 };
 
@@ -41,14 +41,14 @@ int ext2_file_system_init(struct ext2_file_system *me, const char *file) {
     me->block_size = get_block_size(&me->sb);
     me->groups_count = CEIL_DIV(me->sb.s_blocks_count, me->sb.s_blocks_per_group);
 
-    int sz = me->groups_count * sizeof(struct block_group_descriptor_table);
+    int sz = me->groups_count * sizeof(struct block_group_descriptor);
     me->bgdt = malloc(sz);
     ptr = mmap(NULL, sz, PROT_READ, MAP_PRIVATE, fd, me->block_size); // THIS MAY CAUSE MAP_FAILED!!!!!
     if (ptr == MAP_FAILED) {
         return -4;
     }
 
-    struct block_group_descriptor_table*tmp_ptr = ptr;
+    struct block_group_descriptor *tmp_ptr = ptr;
     int i;
     for (i = 0; i < me->groups_count; i++, tmp_ptr++) {
         me->bgdt[i] = *tmp_ptr;

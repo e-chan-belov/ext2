@@ -72,17 +72,17 @@ void debug_super_block(struct super_block sb) {
     printf("s_first_meta_bg: %u\n", sb.s_first_meta_bg);
 }
 
-void debug_bgdt(struct block_group_descriptor_table current_bgdt) {
-    printf("bg_block_bitmap: %u\n", current_bgdt.bg_block_bitmap);
-    printf("bg_inode_bitmap: %u\n", current_bgdt.bg_inode_bitmap);
-    printf("bg_inode_table: %u\n", current_bgdt.bg_inode_table);
-    printf("bg_free_blocks_count: %u\n", current_bgdt.bg_free_blocks_count);
-    printf("bg_free_inodes_count: %u\n", current_bgdt.bg_free_inodes_count);
-    printf("bg_used_dirs_count: %u\n", current_bgdt.bg_used_dirs_count);
-    printf("bg_pad: %u\n", current_bgdt.bg_pad);
-    printf("bg_reserved[0]: %u\n",  current_bgdt.bg_reserved[0]);
-    printf("bg_reserved[1]: %u\n",  current_bgdt.bg_reserved[1]);
-    printf("bg_reserved[2]: %u\n",  current_bgdt.bg_reserved[2]);
+void debug_bgd(struct block_group_descriptor bgd) {
+    printf("bg_block_bitmap: %u\n", bgd.bg_block_bitmap);
+    printf("bg_inode_bitmap: %u\n", bgd.bg_inode_bitmap);
+    printf("bg_inode_table: %u\n", bgd.bg_inode_table);
+    printf("bg_free_blocks_count: %u\n", bgd.bg_free_blocks_count);
+    printf("bg_free_inodes_count: %u\n", bgd.bg_free_inodes_count);
+    printf("bg_used_dirs_count: %u\n", bgd.bg_used_dirs_count);
+    printf("bg_pad: %u\n", bgd.bg_pad);
+    printf("bg_reserved[0]: %u\n",  bgd.bg_reserved[0]);
+    printf("bg_reserved[1]: %u\n",  bgd.bg_reserved[1]);
+    printf("bg_reserved[2]: %u\n",  bgd.bg_reserved[2]);
 }
 
 void debug_inode(struct inode node) {

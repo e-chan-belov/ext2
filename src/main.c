@@ -29,7 +29,7 @@ int main() {
     int i;
     for (i = 0; i < current.groups_count; i++) {
         printf("Block Group Descriptor number: %u\n", i);
-        debug_bgdt(current.bgdt[i]);
+        debug_bgd(current.bgdt[i]);
     }
     
 
