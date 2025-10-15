@@ -31,8 +31,8 @@ __u32 ext2_file_system_create(const char *file);
 __u32 ext2_file_system_init(struct ext2_file_system *me, const char *file);
 void ext2_file_system_destroy(struct ext2_file_system *me);
 
-void ext2_file_system_mount(struct ext2_file_system *fs, const char *file);
-void ext2_file_system_unmount(struct ext2_file_system *fs);
+/*void ext2_file_system_mount(struct ext2_file_system *fs);
+void ext2_file_system_unmount(struct ext2_file_system *fs);*/
 
 struct super_block get_super_block(struct ext2_file_system *fs);
 void set_super_block(struct ext2_file_system *fs, struct super_block sb);

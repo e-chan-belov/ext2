@@ -23,7 +23,9 @@ void virtual_inode_destroy(struct virtual_inode *vi) {
 void next_block(struct virtual_inode *vi) {
     if (vi->direct_index < 12) {
         vi->direct_index++;
-        return;
+    }
+    else if (vi->direct_index == 12) {
+        
     }
     
 }

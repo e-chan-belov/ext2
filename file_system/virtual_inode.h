@@ -11,8 +11,12 @@ struct virtual_inode {
     __u32 second_index;
     __u32 third_index;
 
+    /* cache section */
+    __u32 cached_first_id;
     __u32 *first_block;
+    __u32 cached_second_id;
     __u32 *second_block;
+    __u32 cached_third_id;
     __u32 *third_block;
 };
 
@@ -25,3 +29,6 @@ void to_first_block(struct virtual_inode *vi);
 
 __u32 is_current_block_in_file(struct virtual_inode *vi);
 __u32 get_block_id(struct virtual_inode *vi);
+
+void unlink_current_block(struct virtual_inode *vi);
+void link_block_to_current(struct virtual_inode *vi, __u32 id);
