@@ -99,7 +99,7 @@ __u8 is_block_used(struct ext2_file_system *fs, __u32 id) {
     return ans;
 }
 
-__u8 is_inode_used(struct ext2_file_system *fs, __u32 id) { // todo
+__u8 is_inode_used(struct ext2_file_system *fs, __u32 id) {
     __u32 group = (id - 1) / fs->sb.s_inodes_per_group;
     id = (id - 1) % fs->sb.s_inodes_per_group;
    

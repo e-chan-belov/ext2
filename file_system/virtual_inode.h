@@ -23,5 +23,5 @@ void next_block(struct virtual_inode *vi);
 void prev_block(struct virtual_inode *vi);
 void to_first_block(struct virtual_inode *vi);
 
-__u32 is_current_block_used(struct virtual_inode *vi);
+__u32 is_current_block_in_file(struct virtual_inode *vi);
 __u32 get_block_id(struct virtual_inode *vi);

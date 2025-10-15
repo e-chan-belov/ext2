@@ -63,7 +63,13 @@ void debug_super_block(struct super_block sb) {
     printf("s_algo_bitmap: %u\n", sb.s_algo_bitmap);
     printf("s_prealloc_blocks: %u\n", sb.s_prealloc_blocks);
     printf("s_prealloc_dir_blocks: %u\n", sb.s_prealloc_dir_blocks);
-    printf("s_journal_uuid: %u\n", sb.s_journal_uuid);
+
+    printf("s_journal_uuid: ");
+    for (i = 0; i < 16; i++) {
+        printf("%02x", sb.s_journal_uuid[i]);
+    }
+    printf("\n");
+
     printf("s_journal_inum: %u\n", sb.s_journal_inum);
     printf("s_journal_dev: %u\n", sb.s_journal_dev);
     printf("s_last_orphan: %u\n", sb.s_last_orphan);

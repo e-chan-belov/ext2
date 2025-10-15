@@ -39,7 +39,7 @@ struct super_block {
     __u32 s_algo_bitmap; /* value used by compression algorithms to determine the compression method(s) used */
     __u8 s_prealloc_blocks; /* representing the number of blocks the implementation should attempt to pre-allocate when creating a new regular file */
     __u8 s_prealloc_dir_blocks; /* value representing the number of blocks the implementation should attempt to pre-allocate when creating a new directory */
-    __u16 s_journal_uuid; /* containing the uuid of the journal superblock */
+    __u8 s_journal_uuid[16]; /* containing the uuid of the journal superblock */
     __u32 s_journal_inum; /*  inode number of the journal file */
     __u32 s_journal_dev; /* device number of the journal file */
     __u32 s_last_orphan; /* inode number, pointing to the first inode in the list of inodes to delete */
