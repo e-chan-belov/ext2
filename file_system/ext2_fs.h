@@ -14,10 +14,17 @@
 
 struct ext2_file_system {
     __u32 fd;
+
     struct super_block sb;
-    __u32 block_size;
     struct block_group_descriptor* bgdt;
+
+    __u32 block_size;
     __u32 groups_count;
+
+    __u32 block_bitmap_id;
+    void *last_block_bitmap;
+    __u32 inode_bitmap_id;
+    void *last_inode_bitmap;
 };
 
 __u32 ext2_file_system_create(const char *file);
