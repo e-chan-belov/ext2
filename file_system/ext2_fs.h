@@ -44,10 +44,15 @@ void block_munmap(struct ext2_file_system *fs, void *ptr);
 __u8 is_block_used(struct ext2_file_system *fs, __u32 id);
 __u8 is_inode_used(struct ext2_file_system *fs, __u32 id);
 
+__u8 set_bit_block_bitmap(struct ext2_file_system *fs, __u32 id);
+__u8 set_bit_inode_bitmap(struct ext2_file_system *fs, __u32 id);
+__u8 unset_bit_block_bitmap(struct ext2_file_system *fs, __u32 id);
+__u8 unset_bit_inode_bitmap(struct ext2_file_system *fs, __u32 id);
+
 __u32 block_alloc(struct ext2_file_system *fs, __u32 block);
 __u32 free_block(struct ext2_file_system *fs, __u32 block);
 
-struct inode read_inode(struct ext2_file_system *me, __u32 inode);
+struct inode read_inode(struct ext2_file_system *fs, __u32 inode);
 __u32 inode_alloc(struct ext2_file_system *fs, __u32 inode);
-__u32 put_inode(struct ext2_file_system *me, struct inode inode_, __u32 inode_dir_id);
-__u32 free_inode(struct ext2_file_system *me, __u32 inode);
+__u32 free_inode(struct ext2_file_system *fs, __u32 inode);
+__u32 put_inode(struct ext2_file_system *fs, struct inode inode_, __u32 id);

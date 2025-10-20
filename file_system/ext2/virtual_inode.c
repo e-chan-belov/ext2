@@ -30,7 +30,7 @@ void next_block(struct virtual_inode *vi) {
         return;
     }
 
-    /* TODO: check_and_restore_cached_id(vi); */
+    /* TODO: check_and_restore_cached_id(vi) for race condition */
 
     if (vi->cached_first_id == 0) {
         vi->direct_index = 12;
@@ -87,4 +87,18 @@ void next_block(struct virtual_inode *vi) {
         return;
     }
     printf("Out of bounce!\n");
+}
+
+__u32 is_current_block_in_file(struct virtual_inode *vi) {
+    if (vi->direct_index < 12) {
+        return !!vi->inode->i_block[vi->direct_index];
+    }
+    return !!vi->first_block[vi->first_index];
+}
+
+__u32 get_block_id(struct virtual_inode *vi) {
+    if (vi->direct_index < 12) {
+        return vi->inode->i_block[vi->direct_index];
+    }
+    return vi->first_block[vi->first_index];
 }

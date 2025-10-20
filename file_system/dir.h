@@ -48,7 +48,9 @@ struct ext2_dir_entry {
 };
 
 struct virtual_dir {
-	struct virtual_inode *vi;
+	struct virtual_inode vi;
 };
 
-void virtual_dir_init(struct virtual_dir *vd, struct ext2_file_system *fs, __u32 inode);
+void virtual_dir_init(struct virtual_dir *vd, struct ext2_file_system *fs, __u32 inode) {
+	
+}

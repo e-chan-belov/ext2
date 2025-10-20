@@ -84,21 +84,9 @@ void block_munmap(struct ext2_file_system *fs, void *ptr) {
     munmap(ptr, fs->block_size);
 }
 
-// returns a copy of the requested inode structure
-struct inode read_inode(struct ext2_file_system *me, __u32 inode) {
-    __u32 block_group_index = (inode - 1) / me->sb.s_inodes_per_group;
-    __u32 local_inode_index = (inode - 1) % me->sb.s_inodes_per_group;
-    __u32 id = me->bgdt[block_group_index].bg_inode_table + local_inode_index / (me->block_size / me->sb.s_inode_size);
-    void *ptr = block_mmap(me, id);
-    struct inode temp = *(struct inode*)(ptr + me->sb.s_inode_size * (local_inode_index % (me->block_size / me->sb.s_inode_size)));
-    block_munmap(me, ptr);
-    return temp;
-}
 
-__u8 is_block_used(struct ext2_file_system *fs, __u32 id) {
-    __u32 group = id / fs->sb.s_blocks_per_group;
-    id = id % fs->sb.s_blocks_per_group;
-    
+
+void check_and_change_block_bitmap(struct ext2_file_system *fs, __u32 group) {
     if (fs->block_bitmap_id == 0 || fs->last_block_bitmap == NULL) {
         fs->block_bitmap_id = fs->bgdt[group].bg_block_bitmap;
         fs->last_block_bitmap = block_mmap(fs, fs->bgdt[group].bg_block_bitmap);
@@ -108,15 +96,9 @@ __u8 is_block_used(struct ext2_file_system *fs, __u32 id) {
         fs->block_bitmap_id = fs->bgdt[group].bg_block_bitmap;
         fs->last_block_bitmap = block_mmap(fs, fs->bgdt[group].bg_block_bitmap);
     }
-     
-    __u8 ans = !!(*(__u8*)(fs->last_block_bitmap + id / 8) & (1 << id % 8));
-    return ans;
 }
 
-__u8 is_inode_used(struct ext2_file_system *fs, __u32 id) {
-    __u32 group = (id - 1) / fs->sb.s_inodes_per_group;
-    id = (id - 1) % fs->sb.s_inodes_per_group;
-   
+void check_and_change_inode_bitmap(struct ext2_file_system *fs, __u32 group) {
     if (fs->inode_bitmap_id == 0 || fs->last_inode_bitmap == NULL) {
         fs->inode_bitmap_id = fs->bgdt[group].bg_inode_bitmap;
         fs->last_inode_bitmap = block_mmap(fs, fs->bgdt[group].bg_inode_bitmap);
@@ -126,25 +108,113 @@ __u8 is_inode_used(struct ext2_file_system *fs, __u32 id) {
         fs->inode_bitmap_id = fs->bgdt[group].bg_inode_bitmap;
         fs->last_inode_bitmap = block_mmap(fs, fs->bgdt[group].bg_inode_bitmap);
     }
+}
+
+__u8 is_block_used(struct ext2_file_system *fs, __u32 id) {
+    __u32 group = id / fs->sb.s_blocks_per_group;
+    id = id % fs->sb.s_blocks_per_group;
+    
+    check_and_change_block_bitmap(fs, group);
+     
+    __u8 ans = !!(*(__u8*)(fs->last_block_bitmap + id / 8) & (1 << id % 8));
+    return ans;
+}
+
+__u8 is_inode_used(struct ext2_file_system *fs, __u32 id) {
+    __u32 group = (id - 1) / fs->sb.s_inodes_per_group;
+    id = (id - 1) % fs->sb.s_inodes_per_group;
+   
+    check_and_change_inode_bitmap(fs, group);
 
     __u8 ans = !!(*(__u8*)(fs->last_inode_bitmap + id / 8) & (1 << id % 8));
     return ans;
+}
+
+__u8 set_bit_block_bitmap(struct ext2_file_system *fs, __u32 id) {
+    __u32 group = id / fs->sb.s_blocks_per_group;
+    id = id % fs->sb.s_blocks_per_group;
+
+    check_and_change_block_bitmap(fs, group);
+
+    *(__u8*)(fs->last_block_bitmap + id / 8) |= (1 << id % 8);
+    return 0;
+}
+
+__u8 set_bit_inode_bitmap(struct ext2_file_system *fs, __u32 id) {
+    __u32 group = (id - 1) / fs->sb.s_inodes_per_group;
+    id = (id - 1) % fs->sb.s_inodes_per_group;
+   
+    check_and_change_inode_bitmap(fs, group);
+
+    *(__u8*)(fs->last_inode_bitmap + id / 8) |= (1 << id % 8);
+    return 0;
+}
+
+__u8 unset_bit_block_bitmap(struct ext2_file_system *fs, __u32 id) {
+    __u32 group = id / fs->sb.s_blocks_per_group;
+    id = id % fs->sb.s_blocks_per_group;
+   
+    check_and_change_block_bitmap(fs, group);
+
+    *(__u8*)(fs->last_block_bitmap + id / 8) &= ~(1 << id % 8);
+    return 0;
+}
+__u8 unset_bit_inode_bitmap(struct ext2_file_system *fs, __u32 id) {
+    __u32 group = (id - 1) / fs->sb.s_inodes_per_group;
+    id = (id - 1) % fs->sb.s_inodes_per_group;
+   
+    check_and_change_inode_bitmap(fs, group);
+
+    *(__u8*)(fs->last_inode_bitmap + id / 8) &= ~(1 << id % 8);
+    return 0;
 }
 
 __u32 block_alloc(struct ext2_file_system *fs, __u32 block) {
     if (is_block_used(fs, block)) {
         return -1;
     }
+    set_bit_block_bitmap(fs, block);
     return 0;
 }
 __u32 free_block(struct ext2_file_system *fs, __u32 block) {
-    
-}
-
-__u32 put_inode(struct ext2_file_system *me, struct inode inode_, __u32 inode_dir_id) {
+    if (!is_block_used(fs, block)) {
+        return -1;
+    }
+    unset_bit_block_bitmap(fs, block);
     return 0;
 }
 
-__u32 delete_inode(struct ext2_file_system *me, __u32 inode) {
+// returns a copy of the requested inode structure
+struct inode read_inode(struct ext2_file_system *fs, __u32 inode) {
+    __u32 block_group_index = (inode - 1) / fs->sb.s_inodes_per_group;
+    __u32 local_inode_index = (inode - 1) % fs->sb.s_inodes_per_group;
+    __u32 id = fs->bgdt[block_group_index].bg_inode_table + local_inode_index / (fs->block_size / fs->sb.s_inode_size);
+    void *ptr = block_mmap(fs, id);
+    struct inode temp = *(struct inode*)(ptr + fs->sb.s_inode_size * (local_inode_index % (fs->block_size / fs->sb.s_inode_size)));
+    block_munmap(fs, ptr);
+    return temp;
+}
+
+__u32 inode_alloc(struct ext2_file_system *fs, __u32 inode) {
+    if (is_inode_used(fs, inode)) {
+        return -1;
+    }
+    set_bit_inode_bitmap(fs, inode);
+    return 0;
+}
+__u32 free_inode(struct ext2_file_system *fs, __u32 inode) {
+    if (!is_inode_used(fs, inode)) {
+        return -1;
+    }
+    unset_bit_inode_bitmap(fs, inode);
+    return 0;
+}
+
+__u32 put_inode(struct ext2_file_system *fs, struct inode inode_, __u32 inode_id) {
+    __u32 block_group_index = (inode_id - 1) / fs->sb.s_inodes_per_group;
+    __u32 local_inode_index = (inode_id - 1) % fs->sb.s_inodes_per_group;
+    __u32 id = fs->bgdt[block_group_index].bg_inode_table + local_inode_index / (fs->block_size / fs->sb.s_inode_size);
+    struct inode *ptr = block_mmap(fs, id);
+    *ptr = inode_;
     return 0;
 }
