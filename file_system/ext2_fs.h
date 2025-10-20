@@ -9,8 +9,6 @@
 #include "super_block.h"
 #include "bgdt.h"
 #include "inode.h"
-#include "virtual_inode.h"
-#include "dir.h"
 
 struct ext2_file_system {
     __u32 fd;
@@ -53,7 +51,3 @@ struct inode read_inode(struct ext2_file_system *me, __u32 inode);
 __u32 inode_alloc(struct ext2_file_system *fs, __u32 inode);
 __u32 put_inode(struct ext2_file_system *me, struct inode inode_, __u32 inode_dir_id);
 __u32 free_inode(struct ext2_file_system *me, __u32 inode);
-
-struct virtual_node open_inode(struct ext2_file_system *fs, __u32 inode);
-
-struct dir open_dir(struct ext2_file_system *fs, __u32 inode);
