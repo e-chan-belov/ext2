@@ -55,6 +55,20 @@ void ext2_file_system_destroy(struct ext2_file_system *me) {
     close(me->fd);
 }
 
+struct super_block get_super_block(struct ext2_file_system *fs) {
+    return fs->sb;
+}
+void set_super_block(struct ext2_file_system *fs, struct super_block sb) {
+    fs->sb = sb;
+}
+
+struct block_group_descriptor get_bgd(struct ext2_file_system *fs, __u32 index) {
+    return fs->bgdt[index];
+}
+void set_bgd(struct ext2_file_system *fs, struct block_group_descriptor bgd,__u32 index) {
+    fs->bgdt[index] = bgd;
+}
+
 // please be aware that it can fail because of a page size
 // it doesn't fail for 4K block size
 void* block_mmap(struct ext2_file_system *fs, __u32 id) {
@@ -115,6 +129,16 @@ __u8 is_inode_used(struct ext2_file_system *fs, __u32 id) {
 
     __u8 ans = !!(*(__u8*)(fs->last_inode_bitmap + id / 8) & (1 << id % 8));
     return ans;
+}
+
+__u32 block_alloc(struct ext2_file_system *fs, __u32 block) {
+    if (is_block_used(fs, block)) {
+        return -1;
+    }
+    return 0;
+}
+__u32 free_block(struct ext2_file_system *fs, __u32 block) {
+    
 }
 
 __u32 put_inode(struct ext2_file_system *me, struct inode inode_, __u32 inode_dir_id) {

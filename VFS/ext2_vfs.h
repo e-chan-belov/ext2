@@ -1,9 +1,11 @@
 #pragma once
 
 #include "ext2_fs.h"
+#include "inodes_tree.h"
 
 struct ext2_vfs {
     struct ext2_file_system *fs;
+    struct inodes_tree inodes_tree;
 };
 
 void ext2_vfs_init(struct ext2_vfs *vfs, const char *file);
