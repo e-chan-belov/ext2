@@ -49,8 +49,13 @@ struct ext2_dir_entry {
 
 struct virtual_dir {
 	struct virtual_inode vi;
+
+	void *current_block;
+	__u32 offset;
 };
 
-void virtual_dir_init(struct virtual_dir *vd, struct ext2_file_system *fs, __u32 inode) {
-	
-}
+__u32 virtual_dir_init(struct virtual_dir *vd, struct ext2_file_system *fs, struct inode *inode);
+__u32 virtual_dir_destroy(struct virtual_dir *vd);
+
+void virtual_dir_next_entry();
+struct ext2_dir_entry get_current_entry();
