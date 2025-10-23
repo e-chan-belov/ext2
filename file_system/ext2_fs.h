@@ -27,21 +27,18 @@ struct ext2_file_system {
 
 __u32 ext2_file_system_create(const char *file);
 __u32 ext2_file_system_init(struct ext2_file_system *me, const char *file);
-void ext2_file_system_destroy(struct ext2_file_system *me);
-
-/*void ext2_file_system_mount(struct ext2_file_system *fs);
-void ext2_file_system_unmount(struct ext2_file_system *fs);*/
+__u32 ext2_file_system_destroy(struct ext2_file_system *me);
 
 struct super_block get_super_block(struct ext2_file_system *fs);
-void set_super_block(struct ext2_file_system *fs, struct super_block sb);
+__u32 set_super_block(struct ext2_file_system *fs, struct super_block sb);
 
 __u32 get_block_size_from_fs(struct ext2_file_system *fs);
 
 struct block_group_descriptor get_bgd(struct ext2_file_system *fs, __u32 index);
-void set_bgd(struct ext2_file_system *fs, struct block_group_descriptor bgd,__u32 index);
+__u32 set_bgd(struct ext2_file_system *fs, struct block_group_descriptor bgd,__u32 index);
 
 void* block_mmap(struct ext2_file_system *fs, __u32 id);
-void block_munmap(struct ext2_file_system *fs, void *ptr);
+__u32 block_munmap(struct ext2_file_system *fs, void *ptr);
 
 __u8 is_block_used(struct ext2_file_system *fs, __u32 id);
 __u8 is_inode_used(struct ext2_file_system *fs, __u32 id);

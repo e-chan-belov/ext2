@@ -24,6 +24,8 @@ __u32 ext2_file_system_init(struct ext2_file_system *me, const char *file) {
     me->block_size = get_block_size(&me->sb);
     me->groups_count = CEIL_DIV(me->sb.s_blocks_count, me->sb.s_blocks_per_group);
 
+    /* todo: this may fail with 1K block size
+    */
     __u32 sz = me->groups_count * sizeof(struct block_group_descriptor);
     me->bgdt = malloc(sz);
     ptr = mmap(NULL, sz, PROT_READ, MAP_PRIVATE, fd, me->block_size); // THIS MAY CAUSE MAP_FAILED!!!!!
@@ -50,16 +52,18 @@ __u32 ext2_file_system_init(struct ext2_file_system *me, const char *file) {
     return 0;
 }
 
-void ext2_file_system_destroy(struct ext2_file_system *me) {
+__u32 ext2_file_system_destroy(struct ext2_file_system *me) {
     free(me->bgdt);
     close(me->fd);
+    return 0;
 }
 
 struct super_block get_super_block(struct ext2_file_system *fs) {
     return fs->sb;
 }
-void set_super_block(struct ext2_file_system *fs, struct super_block sb) {
+__u32 set_super_block(struct ext2_file_system *fs, struct super_block sb) {
     fs->sb = sb;
+    return 0;
 }
 
 __u32 get_block_size_from_fs(struct ext2_file_system *fs) {
@@ -69,7 +73,7 @@ __u32 get_block_size_from_fs(struct ext2_file_system *fs) {
 struct block_group_descriptor get_bgd(struct ext2_file_system *fs, __u32 index) {
     return fs->bgdt[index];
 }
-void set_bgd(struct ext2_file_system *fs, struct block_group_descriptor bgd,__u32 index) {
+__u32 set_bgd(struct ext2_file_system *fs, struct block_group_descriptor bgd,__u32 index) {
     fs->bgdt[index] = bgd;
 }
 
@@ -84,14 +88,14 @@ void* block_mmap(struct ext2_file_system *fs, __u32 id) {
     return ptr;
 }
 
-void block_munmap(struct ext2_file_system *fs, void *ptr) {
-    munmap(ptr, fs->block_size);
+__u32 block_munmap(struct ext2_file_system *fs, void *ptr) {
+    return munmap(ptr, fs->block_size);
 }
 
 
 
 void check_and_change_block_bitmap(struct ext2_file_system *fs, __u32 group) {
-    if (fs->block_bitmap_id == 0 || fs->last_block_bitmap == NULL) {
+    if (fs->last_block_bitmap == NULL) {
         fs->block_bitmap_id = fs->bgdt[group].bg_block_bitmap;
         fs->last_block_bitmap = block_mmap(fs, fs->bgdt[group].bg_block_bitmap);
     }
@@ -103,7 +107,7 @@ void check_and_change_block_bitmap(struct ext2_file_system *fs, __u32 group) {
 }
 
 void check_and_change_inode_bitmap(struct ext2_file_system *fs, __u32 group) {
-    if (fs->inode_bitmap_id == 0 || fs->last_inode_bitmap == NULL) {
+    if (fs->last_inode_bitmap == NULL) {
         fs->inode_bitmap_id = fs->bgdt[group].bg_inode_bitmap;
         fs->last_inode_bitmap = block_mmap(fs, fs->bgdt[group].bg_inode_bitmap);
     }
@@ -220,5 +224,6 @@ __u32 put_inode(struct ext2_file_system *fs, struct inode inode_, __u32 inode_id
     __u32 id = fs->bgdt[block_group_index].bg_inode_table + local_inode_index / (fs->block_size / fs->sb.s_inode_size);
     struct inode *ptr = block_mmap(fs, id);
     *ptr = inode_;
+    block_munmap(fs, ptr);
     return 0;
 }
