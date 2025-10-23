@@ -62,6 +62,10 @@ void set_super_block(struct ext2_file_system *fs, struct super_block sb) {
     fs->sb = sb;
 }
 
+__u32 get_block_size_from_fs(struct ext2_file_system *fs) {
+    return fs->block_size;
+}
+
 struct block_group_descriptor get_bgd(struct ext2_file_system *fs, __u32 index) {
     return fs->bgdt[index];
 }

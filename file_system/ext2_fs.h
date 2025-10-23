@@ -35,6 +35,8 @@ void ext2_file_system_unmount(struct ext2_file_system *fs);*/
 struct super_block get_super_block(struct ext2_file_system *fs);
 void set_super_block(struct ext2_file_system *fs, struct super_block sb);
 
+__u32 get_block_size_from_fs(struct ext2_file_system *fs);
+
 struct block_group_descriptor get_bgd(struct ext2_file_system *fs, __u32 index);
 void set_bgd(struct ext2_file_system *fs, struct block_group_descriptor bgd,__u32 index);
 
