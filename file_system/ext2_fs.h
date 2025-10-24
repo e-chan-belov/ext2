@@ -26,8 +26,8 @@ struct ext2_file_system {
 };
 
 __u32 ext2_file_system_create(const char *file);
-__u32 ext2_file_system_init(struct ext2_file_system *me, const char *file);
-__u32 ext2_file_system_destroy(struct ext2_file_system *me);
+__u32 ext2_file_system_init(struct ext2_file_system *fs, const char *file);
+__u32 ext2_file_system_destroy(struct ext2_file_system *fs);
 
 struct super_block get_super_block(struct ext2_file_system *fs);
 __u32 set_super_block(struct ext2_file_system *fs, struct super_block sb);

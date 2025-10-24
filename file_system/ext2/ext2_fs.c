@@ -4,7 +4,7 @@ __u32 ext2_file_system_create(const char *file) {
     return 0;
 }
 
-__u32 ext2_file_system_init(struct ext2_file_system *me, const char *file) {
+__u32 ext2_file_system_init(struct ext2_file_system *fs, const char *file) {
     __u32 fd = open(file, O_RDWR);
 
     __u32 err;
@@ -13,30 +13,28 @@ __u32 ext2_file_system_init(struct ext2_file_system *me, const char *file) {
         return -2;
     }
 
-    me->fd = fd;
-    me->sb = *(struct super_block*)(ptr + 1024);
+    fs->fd = fd;
+    fs->sb = *(struct super_block*)(ptr + 1024);
 
     err = munmap(ptr, 1024);
     if (err < 0) {
         return -3;
     }
 
-    me->block_size = get_block_size(&me->sb);
-    me->groups_count = CEIL_DIV(me->sb.s_blocks_count, me->sb.s_blocks_per_group);
+    fs->block_size = get_block_size(&fs->sb);
+    fs->groups_count = CEIL_DIV(fs->sb.s_blocks_count, fs->sb.s_blocks_per_group);
 
-    /* todo: this may fail with 1K block size
-    */
-    __u32 sz = me->groups_count * sizeof(struct block_group_descriptor);
-    me->bgdt = malloc(sz);
-    ptr = mmap(NULL, sz, PROT_READ, MAP_PRIVATE, fd, me->block_size); // THIS MAY CAUSE MAP_FAILED!!!!!
+    __u32 sz = fs->groups_count * sizeof(struct block_group_descriptor);
+    fs->bgdt = malloc(sz);
+    ptr = mmap(NULL, sz, PROT_READ, MAP_PRIVATE, fd, (1 + fs->sb.s_first_data_block) * fs->block_size); // THIS MAY CAUSE MAP_FAILED!!!!!
     if (ptr == MAP_FAILED) {
         return -4;
     }
 
     struct block_group_descriptor *tmp_ptr = ptr;
     __u32 i;
-    for (i = 0; i < me->groups_count; i++, tmp_ptr++) {
-        me->bgdt[i] = *tmp_ptr;
+    for (i = 0; i < fs->groups_count; i++, tmp_ptr++) {
+        fs->bgdt[i] = *tmp_ptr;
     }
 
     err = munmap(ptr, sz);
@@ -44,17 +42,17 @@ __u32 ext2_file_system_init(struct ext2_file_system *me, const char *file) {
         return -5;
     }
 
-    me->block_bitmap_id = 0;
-    me->last_block_bitmap = NULL;
-    me->inode_bitmap_id = 0;
-    me->last_inode_bitmap = NULL;
+    fs->block_bitmap_id = 0;
+    fs->last_block_bitmap = NULL;
+    fs->inode_bitmap_id = 0;
+    fs->last_inode_bitmap = NULL;
 
     return 0;
 }
 
-__u32 ext2_file_system_destroy(struct ext2_file_system *me) {
-    free(me->bgdt);
-    close(me->fd);
+__u32 ext2_file_system_destroy(struct ext2_file_system *fs) {
+    free(fs->bgdt);
+    close(fs->fd);
     return 0;
 }
 
