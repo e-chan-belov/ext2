@@ -19,6 +19,7 @@ struct ext2_file_system {
     __u32 block_size;
     __u32 groups_count;
 
+    /* cache section */
     __u32 block_bitmap_id;
     void *last_block_bitmap;
     __u32 inode_bitmap_id;
@@ -50,6 +51,8 @@ __u8 unset_bit_inode_bitmap(struct ext2_file_system *fs, __u32 id);
 
 __u32 block_alloc(struct ext2_file_system *fs, __u32 block);
 __u32 free_block(struct ext2_file_system *fs, __u32 block);
+
+__u32 first_free_block(struct ext2_file_system *fs, __u32 hint);
 
 struct inode read_inode(struct ext2_file_system *fs, __u32 inode);
 __u32 inode_alloc(struct ext2_file_system *fs, __u32 inode);

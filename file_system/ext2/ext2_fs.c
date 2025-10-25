@@ -179,6 +179,8 @@ __u32 block_alloc(struct ext2_file_system *fs, __u32 block) {
     if (is_block_used(fs, block)) {
         return -1;
     }
+    fs->sb.s_free_blocks_count--;
+    fs->bgdt[block / fs->sb.s_blocks_per_group].bg_free_blocks_count--;
     set_bit_block_bitmap(fs, block);
     return 0;
 }
@@ -186,11 +188,22 @@ __u32 free_block(struct ext2_file_system *fs, __u32 block) {
     if (!is_block_used(fs, block)) {
         return -1;
     }
+    fs->sb.s_free_blocks_count++;
+    fs->bgdt[block / fs->sb.s_blocks_per_group].bg_free_blocks_count++;
     unset_bit_block_bitmap(fs, block);
     return 0;
 }
 
-// returns a copy of the requested inode structure
+__u32 first_free_block(struct ext2_file_system *fs, __u32 hint) {
+    __u32 id;
+    for (id = hint; id < fs->sb.s_blocks_count; id++) {
+        if(!is_block_used(fs, id)) {
+            return id;
+        }
+    }
+    return 0;
+}
+
 struct inode read_inode(struct ext2_file_system *fs, __u32 inode) {
     __u32 block_group_index = (inode - 1) / fs->sb.s_inodes_per_group;
     __u32 local_inode_index = (inode - 1) % fs->sb.s_inodes_per_group;
@@ -205,6 +218,8 @@ __u32 inode_alloc(struct ext2_file_system *fs, __u32 inode) {
     if (is_inode_used(fs, inode)) {
         return -1;
     }
+    fs->sb.s_free_inodes_count--;
+    fs->bgdt[inode / fs->sb.s_inodes_per_group].bg_free_inodes_count--;
     set_bit_inode_bitmap(fs, inode);
     return 0;
 }
@@ -212,6 +227,8 @@ __u32 free_inode(struct ext2_file_system *fs, __u32 inode) {
     if (!is_inode_used(fs, inode)) {
         return -1;
     }
+    fs->sb.s_free_inodes_count++;
+    fs->bgdt[inode / fs->sb.s_inodes_per_group].bg_free_inodes_count++;
     unset_bit_inode_bitmap(fs, inode);
     return 0;
 }

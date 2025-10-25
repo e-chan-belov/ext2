@@ -45,9 +45,6 @@ int main() {
     debug_ext2_dir_entry(dir.current_entry);
     close_file(&root);*/
 
-    struct super_block temp;
-    temp = *(struct super_block*)debug_via_mmap(current.fd, 1024, current.sb.s_blocks_per_group * current.block_size);
-    debug_super_block(temp);
     ext2_file_system_destroy(&current);
     return 0;
 }
