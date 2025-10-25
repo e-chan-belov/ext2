@@ -4,7 +4,6 @@
 
 #include "types.h"
 #include "file.h"
-#include "virtual_inode.h"
 /*
 
  //* Since EXT2 structures are
@@ -48,7 +47,6 @@ struct ext2_dir_entry {
 };
 
 struct virtual_dir {
-	struct virtual_inode vi;
 
 	void *current_block;
 	__u32 offset;
