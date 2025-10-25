@@ -4,7 +4,7 @@
 #include "super_block.h"
 #include "bgdt.h"
 #include "inode.h"
-#include "dir.h"
+#include "inode_gate.h"
 
 void debug_super_block(struct super_block sb) {
     printf("s_inodes_count: %u\n", sb.s_inodes_count);
@@ -157,6 +157,18 @@ void debug_ext2_dir_entry(struct ext2_dir_entry *entry) {
         printf("name (as string): %s\n", entry->name);
     }
 }*/
+
+void debug_inode_gate(__u32 id, struct ext2_file_system *fs) {
+    struct inode inode = read_inode(fs, id);
+    struct inode_gate ig;
+    inode_gate_init(&ig, fs, &inode);
+    printf("inode gate with id: %u\n", id);
+    int i;
+    for (i = 0; i < get_real_size_in_blocks(&ig); i++) {
+        printf("Block number %u: %u\n", i, get_current_block_id(&ig));
+        next_block(&ig);
+    }
+}
 
 void* debug_via_mmap(int fd, __u32 size, __u32 offset) {
     void* ptr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, offset);
