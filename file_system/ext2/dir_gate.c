@@ -1,5 +1,18 @@
 #include "dir_gate.h"
 
+__u32 ext2_dir_entry_init(struct ext2_dir_entry *dentry, void* ptr) {
+    *dentry = *(struct ext2_dir_entry*)ptr;
+    dentry->name = malloc(sizeof(__u8) * dentry->name_len);
+    int i;
+    for (i = 0; i < dentry->name_len; i++) {
+        dentry->name[i] = *(__u8*)(ptr + sizeof(__u64) + i);
+    }
+    return 0;
+}
+__u32 ext2_dir_entry_destroy(struct ext2_dir_entry *dentry) {
+    free(dentry->name);
+}
+
 __u32 dir_gate_init(struct dir_gate *dg, struct ext2_file_system *fs, __u32 inode) {
     struct inode *i = malloc(sizeof(struct inode));
     *i = read_inode(fs, inode);
@@ -12,8 +25,8 @@ __u32 dir_gate_init(struct dir_gate *dg, struct ext2_file_system *fs, __u32 inod
 
 __u32 dir_gate_destroy(struct dir_gate *dg) {
     free(dg->ig.inode);
-    inode_gate_destroy(&(dg->ig));
-    block_munmap(dg->ig.fs, dg->current_block);
+    if (dg->current_block != NULL) { block_munmap(dg->ig.fs, dg->current_block); };
+    if (inode_gate_destroy(&(dg->ig)) != 0) { return 1; }
     return 0;
 }
 
@@ -28,6 +41,7 @@ __u32 next_entry(struct dir_gate *dg) {
         if (get_real_size_in_blocks(&(dg->ig)) == get_current_block_number(&(dg->ig)) + 1) {
             return 1;
         }
+        printf("WHAT\n");
         block_munmap(dg->ig.fs, dg->current_block);
         next_block(&(dg->ig));
         dg->current_block = block_mmap(dg->ig.fs, get_current_block_id(&dg->ig));
@@ -37,5 +51,7 @@ __u32 next_entry(struct dir_gate *dg) {
 }
 
 struct ext2_dir_entry* get_current_entry(struct dir_gate *dg) {
-    return (struct ext2_dir_entry*)(dg->current_block + dg->offset);
+    struct ext2_dir_entry* dentry = malloc(sizeof(struct ext2_dir_entry));
+    ext2_dir_entry_init(dentry, dg->current_block + dg->offset);
+    return dentry;
 }

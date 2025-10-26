@@ -141,19 +141,19 @@ void debug_inode(struct inode node) {
     printf("\n");
 }
 
-/*void debug_ext2_dir_entry(struct ext2_dir_entry entry) {
-    printf("inode: %u\n", entry.inode);
-    printf("rec_len: %u\n", entry.rec_len);
-    printf("name_len: %u\n", entry.name_len);
-    printf("file_type: %u\n", entry.file_type);
+void debug_ext2_dir_entry(struct ext2_dir_entry* entry) {
+    printf("inode: %u\n", entry->inode);
+    printf("rec_len: %u\n", entry->rec_len);
+    printf("name_len: %u\n", entry->name_len);
+    printf("file_type: %u\n", entry->file_type);
     
     printf("name: ");
     int i;
-    for (i = 0; i < entry.name_len; i++) {
-        printf("%c", entry.name[i]);
+    for (i = 0; i < entry->name_len; i++) {
+        printf("%c", entry->name[i]);
     }
     printf("\n");
-}*/
+}
 
 void debug_inode_gate(__u32 id, struct ext2_file_system *fs) {
     struct inode inode = read_inode(fs, id);

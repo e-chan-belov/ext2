@@ -33,16 +33,22 @@ int main() {
     debug_inode(first);
     debug_inode_gate(13, &current);
 
+    struct dir_gate dg;
+    dir_gate_init(&dg, &current, 2);
 
-    //struct dir_gate dg;
-    //dir_gate_init(&dg, &current, 2);
 
-
+    next_entry(&dg);
+    next_entry(&dg);
+    next_entry(&dg);
+    next_entry(&dg);
+    next_entry(&dg);
+    next_entry(&dg);
     
-    
-    //debug_ext2_dir_entry(get_current_entry(&dg));
+    struct ext2_dir_entry* cur_dentry = get_current_entry(&dg);
+    debug_ext2_dir_entry(cur_dentry);
+    free(cur_dentry);
 
-    //dir_gate_destroy(&dg);
+    dir_gate_destroy(&dg);
     ext2_file_system_destroy(&current);
     return 0;
 }
