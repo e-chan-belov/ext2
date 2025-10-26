@@ -194,8 +194,14 @@ __u32 free_block(struct ext2_file_system *fs, __u32 block) {
     return 0;
 }
 
+/* this is a really tricky function.
+* should i also make it preallocate
+* blocks in future?
+*/
 __u32 first_free_block(struct ext2_file_system *fs, __u32 hint) {
     __u32 id;
+    /* it should try to find new blocks within 64 blocks of the ideal hint-block
+    */
     for (id = hint; id < fs->sb.s_blocks_count; id++) {
         if(!is_block_used(fs, id)) {
             return id;

@@ -27,13 +27,22 @@ struct inode get_inode_copy(struct inode_gate *ig) {
     return *(ig->inode);
 }
 
-__u32 get_size_in_blocks(struct inode_gate *ig) {
-    return ig->inode->i_blocks * BLOCKS_SIZE_IN_I_BLOCKS / get_block_size_from_fs(ig->fs);
+__u32 get_real_size_in_blocks(struct inode_gate *ig) {
+    __u32 blocks = ig->inode->i_blocks * BLOCKS_SIZE_IN_I_BLOCKS / get_block_size_from_fs(ig->fs);
+    if (blocks >= DIRECT_INDEXES_AMOUNT) {
+        blocks--;
+    }
+    /* todo */
+    return blocks;
+}
+
+__u32 get_current_block_number(struct inode_gate *ig) {
+    return ig->lc;
 }
 
 
 __u32 does_lc_fit_in_file(struct inode_gate *ig, __u32 lc) {
-    __u32 size_in_blocks = get_size_in_blocks(ig);
+    __u32 size_in_blocks = get_real_size_in_blocks(ig);
     if (lc >= 0 && lc < size_in_blocks) {
         return 1;
     }
@@ -106,7 +115,7 @@ __u32 check_and_cache_second_indirect(struct inode_gate *ig, __u32 hint) {
 
 __u32 call_third_indirect(struct inode_gate *ig, __u32 block) {
     ig->third_indirect_id = block;
-    ig->third_indirect_block = block_mmap(ig->fs, ig->third_indirect_block);
+    ig->third_indirect_block = block_mmap(ig->fs, ig->third_indirect_id);
     return 0;
 }
 __u32 check_and_cache_third_indirect(struct inode_gate *ig, __u32 hint) {
@@ -115,7 +124,7 @@ __u32 check_and_cache_third_indirect(struct inode_gate *ig, __u32 hint) {
         call_third_indirect(ig, hint);
         return 0;
     }
-    if (hint != ig->third_indirect_block) {
+    if (hint != ig->third_indirect_id) {
         block_munmap(ig->fs, ig->third_indirect_block);
         call_third_indirect(ig, hint);
         return 0;
@@ -156,11 +165,12 @@ __u32 get_current_block_id(struct inode_gate *ig) {
 }
 
 __u32 alloc_block_for_indirection(struct inode_gate *ig, __u32 hint) {
-    return block_alloc(ig->fs, hint);
+    ig->inode->i_blocks += get_block_size_from_fs(ig->fs) / BLOCKS_SIZE_IN_I_BLOCKS;
+    return block_alloc(ig->fs, first_free_block(ig->fs, hint));
 }
 
 __u32 append_block(struct inode_gate *ig, __u32 block) {
-    __u32 current_size = get_size_in_blocks(ig);
+    __u32 current_size = get_real_size_in_blocks(ig);
     ig->inode->i_blocks += get_block_size_from_fs(ig->fs) / BLOCKS_SIZE_IN_I_BLOCKS;
     if (current_size < DIRECT_INDEXES_AMOUNT) {
         ig->inode->i_block[current_size] = block;
@@ -213,5 +223,9 @@ __u32 append_block(struct inode_gate *ig, __u32 block) {
         ig->first_indirect_block[last_lc % pointers_amount_in_block] = block;
         return 0;
     }
+    return 1;
+}
+
+__u32 unlink_last_block(struct inode_gate *ig) {
     return 1;
 }

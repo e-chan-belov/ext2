@@ -5,9 +5,9 @@
 #include "bgdt.h"
 #include "inode.h"
 #include "types.h"
-#include "dir.h"
 #include "fs_debug.h"
 #include "ext2_fs.h"
+#include "dir_gate.h"
 
 
 
@@ -29,7 +29,7 @@ int main() {
     }
     
 
-    struct inode first = read_inode(&current, 2);
+    struct inode first = read_inode(&current, 13);
     debug_inode(first);
 /*
     struct file root;
@@ -45,6 +45,21 @@ int main() {
     debug_ext2_dir_entry(dir.current_entry);
     close_file(&root);*/
 
+    debug_inode_gate(13, &current);
+
+    struct dir_gate dg;
+    dir_gate_init(&dg, &current, 2);
+
+    next_entry(&dg);
+    next_entry(&dg);
+    next_entry(&dg);
+    next_entry(&dg);
+    next_entry(&dg);
+    next_entry(&dg);
+
+    debug_ext2_dir_entry(get_current_entry(&dg));
+
+    dir_gate_destroy(&dg);
     ext2_file_system_destroy(&current);
     return 0;
 }

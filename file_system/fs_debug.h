@@ -5,6 +5,7 @@
 #include "bgdt.h"
 #include "inode.h"
 #include "inode_gate.h"
+#include "dir_gate.h"
 
 void debug_super_block(struct super_block sb) {
     printf("s_inodes_count: %u\n", sb.s_inodes_count);
@@ -139,7 +140,7 @@ void debug_inode(struct inode node) {
     }
     printf("\n");
 }
-/*
+
 void debug_ext2_dir_entry(struct ext2_dir_entry *entry) {
     printf("inode: %u\n", entry->inode);
     printf("rec_len: %u\n", entry->rec_len);
@@ -156,7 +157,7 @@ void debug_ext2_dir_entry(struct ext2_dir_entry *entry) {
     if (entry->name_len > 0 && entry->name[entry->name_len - 1] == '\0') {
         printf("name (as string): %s\n", entry->name);
     }
-}*/
+}
 
 void debug_inode_gate(__u32 id, struct ext2_file_system *fs) {
     struct inode inode = read_inode(fs, id);
