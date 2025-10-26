@@ -46,6 +46,7 @@ int main() {
     
     struct ext2_dir_entry* cur_dentry = get_current_entry(&dg);
     debug_ext2_dir_entry(cur_dentry);
+    ext2_dir_entry_destroy(cur_dentry);
     free(cur_dentry);
 
     dir_gate_destroy(&dg);
