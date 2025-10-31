@@ -17,6 +17,7 @@ __u32 dir_gate_init(struct dir_gate *dg, struct ext2_file_system *fs, __u32 inod
     struct inode *i = malloc(sizeof(struct inode));
     *i = read_inode(fs, inode);
     inode_gate_init(&(dg->ig), fs, i);
+    dg->id = inode;
 
     dg->offset = 0;
     dg->current_block = block_mmap(fs, get_current_block_id(&dg->ig));
@@ -26,6 +27,7 @@ __u32 dir_gate_init(struct dir_gate *dg, struct ext2_file_system *fs, __u32 inod
 __u32 dir_gate_destroy(struct dir_gate *dg) {
     free(dg->ig.inode);
     if (dg->current_block != NULL) { block_munmap(dg->ig.fs, dg->current_block); };
+    put_inode(dg->ig.fs, *dg->ig.inode, dg->id);
     if (inode_gate_destroy(&(dg->ig)) != 0) { return 1; }
     return 0;
 }

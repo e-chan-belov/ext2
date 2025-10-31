@@ -15,6 +15,7 @@ __u32 ext2_dir_entry_destroy(struct ext2_dir_entry *dentry);
 
 struct dir_gate {
     struct inode_gate ig;
+	__u32 id;
 
     __u32 offset;
     void *current_block;
