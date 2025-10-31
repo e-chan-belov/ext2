@@ -41,7 +41,7 @@ __u32 get_current_block_number(struct inode_gate *ig) {
 }
 
 
-__u32 does_lc_fit_in_file(struct inode_gate *ig, __u32 lc) {
+static __u32 does_lc_fit_in_file(struct inode_gate *ig, __u32 lc) {
     __u32 size_in_blocks = get_real_size_in_blocks(ig);
     if (lc >= 0 && lc < size_in_blocks) {
         return 1;
@@ -75,12 +75,12 @@ __u32 move_to_first_block(struct inode_gate *ig) {
     return 0;
 }
 
-__u32 call_first_indirect(struct inode_gate *ig, __u32 block) {
+static __u32 call_first_indirect(struct inode_gate *ig, __u32 block) {
     ig->first_indirect_id = block;
     ig->first_indirect_block = block_mmap(ig->fs, ig->first_indirect_id);
     return 0;
 }
-__u32 check_and_cache_first_indirect(struct inode_gate *ig, __u32 hint) {
+static __u32 check_and_cache_first_indirect(struct inode_gate *ig, __u32 hint) {
     if (hint == 0) { return 1; }
     if (ig->first_indirect_block == NULL) {
         call_first_indirect(ig, hint);
@@ -94,12 +94,12 @@ __u32 check_and_cache_first_indirect(struct inode_gate *ig, __u32 hint) {
     return 0;
 }
 
-__u32 call_second_indirect(struct inode_gate *ig, __u32 block) {
+static __u32 call_second_indirect(struct inode_gate *ig, __u32 block) {
     ig->second_indirect_id = block;
     ig->second_indirect_block = block_mmap(ig->fs, ig->second_indirect_id);
     return 0;
 }
-__u32 check_and_cache_second_indirect(struct inode_gate *ig, __u32 hint) {
+static __u32 check_and_cache_second_indirect(struct inode_gate *ig, __u32 hint) {
     if (hint == 0) { return 1; }
     if (ig->second_indirect_block == NULL) {
         call_second_indirect(ig, hint);
@@ -113,12 +113,12 @@ __u32 check_and_cache_second_indirect(struct inode_gate *ig, __u32 hint) {
     return 0;
 }
 
-__u32 call_third_indirect(struct inode_gate *ig, __u32 block) {
+static __u32 call_third_indirect(struct inode_gate *ig, __u32 block) {
     ig->third_indirect_id = block;
     ig->third_indirect_block = block_mmap(ig->fs, ig->third_indirect_id);
     return 0;
 }
-__u32 check_and_cache_third_indirect(struct inode_gate *ig, __u32 hint) {
+static __u32 check_and_cache_third_indirect(struct inode_gate *ig, __u32 hint) {
     if (hint == 0) { return 1; }
     if (ig->third_indirect_block == NULL) {
         call_third_indirect(ig, hint);
@@ -164,7 +164,12 @@ __u32 get_current_block_id(struct inode_gate *ig) {
     return 0;
 }
 
-__u32 alloc_block_for_indirection(struct inode_gate *ig, __u32 hint) {
+__u32 change_inode_size(struct inode_gate *ig, __s32 offset) {
+    ig->inode->i_size += offset;
+    return 0;
+}
+
+static __u32 alloc_block_for_indirection(struct inode_gate *ig, __u32 hint) {
     ig->inode->i_blocks += get_block_size_from_fs(ig->fs) / BLOCKS_SIZE_IN_I_BLOCKS;
     return block_alloc(ig->fs, first_free_block(ig->fs, hint));
 }
@@ -193,7 +198,7 @@ __u32 append_block(struct inode_gate *ig, __u32 block) {
     if (last_lc == 0) {
         ig->inode->i_block[SECOND_INDIRECT_BLOCK_ID] = alloc_block_for_indirection(ig, block + 1);
     }
-    if (last_lc % pointers_amount_in_block == 0) {
+    if (last_lc % pointers_amount_in_block == 0 && last_lc < pointers_amount_in_block * pointers_amount_in_block) {
         check_and_cache_second_indirect(ig, ig->inode->i_block[SECOND_INDIRECT_BLOCK_ID]);
         ig->second_indirect_block[last_lc / pointers_amount_in_block] = alloc_block_for_indirection(ig, block + 1);
     }
@@ -213,7 +218,8 @@ __u32 append_block(struct inode_gate *ig, __u32 block) {
         ig->third_indirect_block[last_lc / (pointers_amount_in_block * pointers_amount_in_block)] = alloc_block_for_indirection(ig, block + 1);
     }
     if (last_lc % pointers_amount_in_block == 0) {
-        check_and_cache_second_indirect(ig, ig->inode->i_block[SECOND_INDIRECT_BLOCK_ID]);
+        check_and_cache_third_indirect(ig, ig->inode->i_block[THIRD_INDIRECT_BLOCK_ID]);
+        check_and_cache_second_indirect(ig, ig->third_indirect_block[last_lc / (pointers_amount_in_block * pointers_amount_in_block)]);
         ig->second_indirect_block[last_lc / pointers_amount_in_block] = alloc_block_for_indirection(ig, block + 1);
     }
     if (last_lc < pointers_amount_in_block * pointers_amount_in_block * pointers_amount_in_block) {
@@ -226,6 +232,82 @@ __u32 append_block(struct inode_gate *ig, __u32 block) {
     return 1;
 }
 
+static __u32 free_indirection_block(struct inode_gate *ig, __u32 block) {
+    ig->inode->i_blocks -= get_block_size_from_fs(ig->fs) / BLOCKS_SIZE_IN_I_BLOCKS;
+    return free_block(ig->fs, block);
+}
+
+// retuns an id of the unlinked block
 __u32 unlink_last_block(struct inode_gate *ig) {
-    return 1;
+    __u32 current_size = get_real_size_in_blocks(ig);
+    if (current_size == 0) { return 0; }
+    ig->inode->i_blocks -= get_block_size_from_fs(ig->fs) / BLOCKS_SIZE_IN_I_BLOCKS;
+    if (current_size < DIRECT_INDEXES_AMOUNT) {
+        __u32 temp = ig->inode->i_block[current_size - 1];
+        ig->inode->i_block[current_size - 1] = 0;
+        return temp;
+    }
+
+    __u32 ret_id;
+    __u32 last_lc = current_size - 1;
+    last_lc -= DIRECT_INDEXES_AMOUNT;
+    __u32 pointers_amount_in_block = get_block_size_from_fs(ig->fs) / sizeof(__u32);
+
+    if (last_lc < pointers_amount_in_block) {
+        check_and_cache_first_indirect(ig, ig->inode->i_block[FIRST_INDIRECT_BLOCK_ID]);
+        
+        ret_id = ig->first_indirect_block[last_lc];
+        free_block(ig->fs, ig->first_indirect_block[last_lc]);
+        ig->first_indirect_block[last_lc] = 0;
+    }
+    if (last_lc == 0) {
+        free_indirection_block(ig, ig->inode->i_block[FIRST_INDIRECT_BLOCK_ID]);
+        ig->inode->i_block[FIRST_INDIRECT_BLOCK_ID] = 0;
+    }
+
+    last_lc -= pointers_amount_in_block;
+    if (last_lc < pointers_amount_in_block * pointers_amount_in_block) {
+        check_and_cache_second_indirect(ig, ig->inode->i_block[SECOND_INDIRECT_BLOCK_ID]);
+        check_and_cache_first_indirect(ig, ig->second_indirect_block[last_lc / pointers_amount_in_block]);
+        
+        ret_id = ig->first_indirect_block[last_lc % pointers_amount_in_block];
+        free_block(ig->fs, ig->first_indirect_block[last_lc % pointers_amount_in_block]);
+        ig->first_indirect_block[last_lc % pointers_amount_in_block] = 0;
+    }
+    if (last_lc % pointers_amount_in_block == 0 && last_lc < pointers_amount_in_block * pointers_amount_in_block) {
+        check_and_cache_second_indirect(ig, ig->inode->i_block[SECOND_INDIRECT_BLOCK_ID]);
+        free_indirection_block(ig, ig->second_indirect_block[last_lc / pointers_amount_in_block]);
+        ig->second_indirect_block[last_lc / pointers_amount_in_block] = 0;
+    }
+    if (last_lc == 0) {
+        free_indirection_block(ig, ig->inode->i_block[SECOND_INDIRECT_BLOCK_ID]);
+        ig->inode->i_block[SECOND_INDIRECT_BLOCK_ID] = 0;
+    }
+
+    last_lc -= pointers_amount_in_block * pointers_amount_in_block;
+    if (last_lc < pointers_amount_in_block * pointers_amount_in_block * pointers_amount_in_block) {
+        check_and_cache_third_indirect(ig, ig->inode->i_block[THIRD_INDIRECT_BLOCK_ID]);
+        check_and_cache_second_indirect(ig, ig->third_indirect_block[last_lc / (pointers_amount_in_block * pointers_amount_in_block)]);
+        check_and_cache_first_indirect(ig, ig->second_indirect_block[last_lc / pointers_amount_in_block % pointers_amount_in_block]);
+        
+        ret_id = ig->first_indirect_block[last_lc % pointers_amount_in_block];
+        free_block(ig->fs, ig->first_indirect_block[last_lc % pointers_amount_in_block]);
+        ig->first_indirect_block[last_lc % pointers_amount_in_block] = 0;
+    }
+    if (last_lc % pointers_amount_in_block == 0) {
+        check_and_cache_third_indirect(ig, ig->inode->i_block[THIRD_INDIRECT_BLOCK_ID]);
+        check_and_cache_second_indirect(ig, ig->third_indirect_block[last_lc / (pointers_amount_in_block * pointers_amount_in_block)]);
+        free_indirection_block(ig, ig->second_indirect_block[last_lc / pointers_amount_in_block]);
+        ig->second_indirect_block[last_lc / pointers_amount_in_block] = 0;
+    }
+    if (last_lc % (pointers_amount_in_block * pointers_amount_in_block) == 0) {
+        check_and_cache_third_indirect(ig, ig->inode->i_block[THIRD_INDIRECT_BLOCK_ID]);
+        free_indirection_block(ig, ig->third_indirect_block[last_lc / (pointers_amount_in_block * pointers_amount_in_block)]);
+        ig->third_indirect_block[last_lc / (pointers_amount_in_block * pointers_amount_in_block)] = 0;
+    }
+    if (last_lc == 0) {
+        free_indirection_block(ig, ig->inode->i_block[THIRD_INDIRECT_BLOCK_ID]);
+        ig->inode->i_block[THIRD_INDIRECT_BLOCK_ID] = 0;
+    }
+    return ret_id;
 }

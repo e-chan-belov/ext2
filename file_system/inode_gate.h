@@ -39,5 +39,7 @@ __u32 move_to_first_block(struct inode_gate *ig);
 
 __u32 get_current_block_id(struct inode_gate *ig);
 
+__u32 change_inode_size(struct inode_gate *ig, __s32 offset);
+
 __u32 append_block(struct inode_gate *ig, __u32 block);
 __u32 unlink_last_block(struct inode_gate *ig);
