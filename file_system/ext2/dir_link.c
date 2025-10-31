@@ -15,9 +15,11 @@ __u32 dir_link_destroy(struct dir_link *dl) {
 }
 
 __u8 dir_link_is_id(struct dir_link *dl) {
+    if (dl->head == 0) { return 0; }
     return dl->head->is_id;
 }
 __u32 dir_link_get_value(struct dir_link *dl) {
+    if (dl->head == 0) { return 0; }
     return dl->head->value;
 }
 
