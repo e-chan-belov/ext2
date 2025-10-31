@@ -26,6 +26,6 @@ __u32 dir_gate_destroy(struct dir_gate *dg);
 __u32 next_entry(struct dir_gate *dg);
 __u32 entry_current_dir(struct dir_gate *dg);
 
-struct ext2_dir_entry* get_current_entry(struct dir_gate *dg); /* todo */
+struct ext2_dir_entry get_current_entry(struct dir_gate *dg); /* todo */
 __u32 delete_current_entry(struct dir_gate *dg);
 __u32 append_new_entry(struct dir_gate *dg);

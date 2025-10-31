@@ -50,8 +50,8 @@ __u32 next_entry(struct dir_gate *dg) {
     return 0;
 }
 
-struct ext2_dir_entry* get_current_entry(struct dir_gate *dg) {
-    struct ext2_dir_entry* dentry = malloc(sizeof(struct ext2_dir_entry));
-    ext2_dir_entry_init(dentry, dg->current_block + dg->offset);
+struct ext2_dir_entry get_current_entry(struct dir_gate *dg) {
+    struct ext2_dir_entry dentry;
+    ext2_dir_entry_init(&dentry, dg->current_block + dg->offset);
     return dentry;
 }
