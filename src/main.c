@@ -36,10 +36,6 @@ int main() {
     struct dir_gate dg;
     dir_gate_init(&dg, &current, 2);
 
-
-    next_entry(&dg);
-    next_entry(&dg);
-    next_entry(&dg);
     next_entry(&dg);
     next_entry(&dg);
     next_entry(&dg);

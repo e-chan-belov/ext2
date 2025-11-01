@@ -97,6 +97,12 @@ __u32 prev_step(struct dir_gate *dg) {
         return 0;
     }
     else {
+        if (dg->offset == 0) {
+            dg->offset = get_block_size_from_fs(dg->ig.fs);
+            block_munmap(dg->ig.fs, dg->current_block);
+            prev_block(&dg->ig);
+            dg->current_block = block_mmap(dg->ig.fs, get_current_block_id(&dg->ig));
+        }
         dg->offset -= dir_link_get_value(&dg->dl);
         dir_link_remove_value(&dg->dl);
         return 0;
@@ -108,4 +114,94 @@ struct ext2_dir_entry get_current_entry(struct dir_gate *dg) {
     struct ext2_dir_entry dentry;
     ext2_dir_entry_init(&dentry, dg->current_block + dg->offset);
     return dentry;
+}
+
+__u32 delete_current_entry(struct dir_gate *dg) {
+    struct ext2_dir_entry entry = *(struct ext2_dir_entry*)(dg->current_block + dg->offset);
+    if (entry.name_len == 1 && entry.name[0] == '.' ||
+    entry.name_len == 2 && entry.name[0] == '.' && entry.name[1] == '.') { return 1; }
+    __u32 cur_len = entry.rec_len;
+
+    dg->offset -= dir_link_get_value(&dg->dl);
+    dir_link_remove_value(&dg->dl);
+
+    struct ext2_dir_entry *dentry = (struct ext2_dir_entry*)(dg->current_block + dg->offset);
+    dentry->rec_len += cur_len;
+    return 0;
+
+}
+
+static __u32 get_name_size_in_alloc_bytes(const char *name) {
+    int i = 0;
+    while(name[i] != 0) { i++; }
+    int bytes = CEIL_DIV(i, sizeof(__u32));
+    return i;
+}
+static __u32 get_real_rec_len(const char *name) {
+    return sizeof(__u32) * (2 + get_name_size_in_alloc_bytes(name));
+}
+static __u32 get_real_rec_len(__u32 name_len) {
+    return sizeof(__u32) * (2 + CEIL_DIV(name_len, sizeof(__u32)));
+}
+
+static void enter_new_entry_at_pointer(__u32 inode, __u16 rec_len, __u8 file_type, const char *name, void *ptr, __s32 rest) {
+    *(__u32*)ptr = inode;
+    *(__u16*)(ptr + sizeof(__u32)) = rec_len + rest;
+    __u8 i = 0;
+    while(name[i] != 0) {
+        *(__u8*)(ptr + 2 * sizeof(__u32) + i) = name[i];
+        i++; 
+    }
+    int j;
+    for (j = i; j < sizeof(__u32) * CEIL_DIV(i, sizeof(__u32)); j++) {
+        *(__u8*)(ptr + 2 * sizeof(__u32) + j) = 0;
+    }
+    *(__u8*)(ptr + sizeof(__u32) + sizeof(__u16)) = i;
+    *(__u8*)(ptr + sizeof(__u32) + sizeof(__u16) + sizeof(__u8)) = file_type;
+
+}
+__u32 add_new_entry(struct dir_gate *dg, const char *name,__u8 file_type, __u32 inode) {
+    struct inode_gate ig;
+    inode_gate_init(&ig, dg->ig.fs, dg->ig.inode);
+    void *ptr = block_mmap(ig.fs, get_current_block_id(&ig));
+    struct ext2_dir_entry entry = *(struct ext2_dir_entry*)ptr;
+    __u32 req_rec_len = get_real_rec_len(name);
+    __u32 offset = 0;
+    __u32 block_offset = 0;
+    __u32 total_size_in_blocks = ig.inode->i_size / get_block_size_from_fs(ig.fs);
+    while (block_offset < total_size_in_blocks) {
+        while (offset < get_block_size_from_fs(ig.fs)) {
+            __s32 rest = entry.rec_len - (get_real_rec_len(entry.name_len) + req_rec_len);
+            if (rest > 0) {
+                enter_new_entry_at_pointer(inode, req_rec_len, file_type, name, ptr + offset, rest);
+                block_munmap(ig.fs, ptr);
+                inode_gate_destroy(&ig);
+                return 0;
+            }
+            offset += entry.rec_len;
+            if (offset != get_block_size_from_fs(ig.fs)) {
+                entry = *(struct ext2_dir_entry*)(ptr + offset);
+            }
+        }
+        offset = 0;
+        block_offset++;
+        if (block_offset != total_size_in_blocks) {
+            block_munmap(ig.fs, ptr);
+            next_block(&ig);
+            ptr = block_mmap(ig.fs, get_current_block_id(&ig));
+            entry = *(struct ext2_dir_entry*)ptr;
+        }
+    }
+    __u32 new_block = first_free_block(ig.fs, get_current_block_number(&ig));
+    block_alloc(ig.fs, new_block);
+    append_block(&ig, new_block);
+
+    block_munmap(ig.fs, ptr);
+    next_block(&ig);
+    ptr = block_mmap(ig.fs, get_current_block_id(&ig));
+    entry = *(struct ext2_dir_entry*)ptr;
+    enter_new_entry_at_pointer(inode, req_rec_len, file_type, name, ptr + offset, get_block_size_from_fs(ig.fs) - req_rec_len);
+    block_munmap(ig.fs, ptr);
+    inode_gate_destroy(&ig);
+    return 0;
 }

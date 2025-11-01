@@ -33,4 +33,4 @@ __u32 prev_step(struct dir_gate *dg);
 
 struct ext2_dir_entry get_current_entry(struct dir_gate *dg); /* todo */
 __u32 delete_current_entry(struct dir_gate *dg);
-__u32 append_new_entry(struct dir_gate *dg);
+__u32 add_new_entry(struct dir_gate *dg, const char *name,__u8 file_type, __u32 inode);
