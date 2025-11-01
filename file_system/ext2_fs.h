@@ -53,6 +53,7 @@ __u32 block_alloc(struct ext2_file_system *fs, __u32 block);
 __u32 free_block(struct ext2_file_system *fs, __u32 block);
 
 __u32 first_free_block(struct ext2_file_system *fs, __u32 hint);
+__u32 first_free_inode(struct ext2_file_system *fs, __u32 hint);
 
 struct inode read_inode(struct ext2_file_system *fs, __u32 inode);
 __u32 inode_alloc(struct ext2_file_system *fs, __u32 inode);

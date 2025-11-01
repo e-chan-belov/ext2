@@ -210,6 +210,16 @@ __u32 first_free_block(struct ext2_file_system *fs, __u32 hint) {
     return 0;
 }
 
+__u32 first_free_inode(struct ext2_file_system *fs, __u32 hint) {
+    __u32 id;
+    for (id = hint; id < fs->sb.s_inodes_count; id++) {
+        if (!is_inode_used(fs, id)) {
+            return id;
+        }
+    }
+    return 0;
+}
+
 struct inode read_inode(struct ext2_file_system *fs, __u32 inode) {
     __u32 block_group_index = (inode - 1) / fs->sb.s_inodes_per_group;
     __u32 local_inode_index = (inode - 1) % fs->sb.s_inodes_per_group;
