@@ -51,6 +51,21 @@ __u32 ext2_file_system_init(struct ext2_file_system *fs, const char *file) {
 }
 
 __u32 ext2_file_system_destroy(struct ext2_file_system *fs) {
+    void *ptr = mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_PRIVATE, fs->fd, 0);
+    *(struct super_block*)(ptr + 1024) = fs->sb;
+    munmap(ptr, 4096);
+    __u32 sz = fs->groups_count * sizeof(struct block_group_descriptor);
+    ptr = mmap(NULL, sz, PROT_READ | PROT_WRITE, MAP_PRIVATE, fs->fd, (1 + fs->sb.s_first_data_block) * fs->block_size); // THIS MAY CAUSE MAP_FAILED!!!!!
+
+    __u32 i;
+    
+    struct block_group_descriptor *tmp_ptr = ptr;
+    for (i = 0; i < fs->groups_count; i++) {
+        *tmp_ptr = fs->bgdt[i];
+    }
+    munmap(ptr, sz);
+    if (fs->last_block_bitmap != 0) { free(fs->last_block_bitmap); }
+    if (fs->last_inode_bitmap != 0) { free(fs->last_inode_bitmap); }
     free(fs->bgdt);
     close(fs->fd);
     return 0;

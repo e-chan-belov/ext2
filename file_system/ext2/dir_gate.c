@@ -161,6 +161,7 @@ static void enter_new_entry_at_pointer(__u32 inode, __u16 rec_len, __u8 file_typ
 
 }
 __u32 add_new_entry(struct dir_gate *dg, const char *name,__u8 file_type, __u32 inode) {
+    
     struct inode_gate ig;
     inode_gate_init(&ig, dg->ig.fs, dg->ig.inode);
     void *ptr = block_mmap(ig.fs, get_current_block_id(&ig));
@@ -173,6 +174,7 @@ __u32 add_new_entry(struct dir_gate *dg, const char *name,__u8 file_type, __u32 
         while (offset < get_block_size_from_fs(ig.fs)) {
             __s32 rest = entry.rec_len - (get_real_rec_len_with_len(entry.name_len) + req_rec_len);
             if (rest > 0) {
+                *(__u16*)(ptr + offset + sizeof(__u32)) -= rest;
                 enter_new_entry_at_pointer(inode, req_rec_len, file_type, name, ptr + offset, rest);
                 block_munmap(ig.fs, ptr);
                 inode_gate_destroy(&ig);

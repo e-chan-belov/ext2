@@ -39,11 +39,24 @@ int main() {
     next_entry(&dg);
     next_entry(&dg);
     next_entry(&dg);
+    next_entry(&dg);
+    next_entry(&dg);
+    next_entry(&dg);
+    next_entry(&dg);
     
     struct ext2_dir_entry cur_dentry = get_current_entry(&dg);
     debug_ext2_dir_entry(&cur_dentry);
-    ext2_dir_entry_destroy(&cur_dentry);
 
+    printf("TESTING!\n");
+
+    //__u32 new_inode = first_free_inode(&current, 1);
+    //inode_alloc(&current, new_inode);
+    //printf("%u\n", is_inode_used(&current, 16));
+    //const char *name = "TEST";
+    //add_new_entry(&dg, name, 0, new_inode);
+
+
+    ext2_dir_entry_destroy(&cur_dentry);
     dir_gate_destroy(&dg);
     
     ext2_file_system_destroy(&current);
