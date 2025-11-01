@@ -140,7 +140,7 @@ static __u32 get_name_size_in_alloc_bytes(const char *name) {
 static __u32 get_real_rec_len(const char *name) {
     return sizeof(__u32) * (2 + get_name_size_in_alloc_bytes(name));
 }
-static __u32 get_real_rec_len(__u32 name_len) {
+static __u32 get_real_rec_len_with_len(__u32 name_len) {
     return sizeof(__u32) * (2 + CEIL_DIV(name_len, sizeof(__u32)));
 }
 
@@ -171,7 +171,7 @@ __u32 add_new_entry(struct dir_gate *dg, const char *name,__u8 file_type, __u32 
     __u32 total_size_in_blocks = ig.inode->i_size / get_block_size_from_fs(ig.fs);
     while (block_offset < total_size_in_blocks) {
         while (offset < get_block_size_from_fs(ig.fs)) {
-            __s32 rest = entry.rec_len - (get_real_rec_len(entry.name_len) + req_rec_len);
+            __s32 rest = entry.rec_len - (get_real_rec_len_with_len(entry.name_len) + req_rec_len);
             if (rest > 0) {
                 enter_new_entry_at_pointer(inode, req_rec_len, file_type, name, ptr + offset, rest);
                 block_munmap(ig.fs, ptr);
