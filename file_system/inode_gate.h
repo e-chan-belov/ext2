@@ -29,7 +29,7 @@ __u32 inode_gate_destroy(struct inode_gate *ig);
 
 struct inode get_inode_copy(struct inode_gate *ig);
 
-__u32 get_real_size_in_blocks(struct inode_gate *ig);
+__u32 get_real_size_in_alloc_blocks(struct inode_gate *ig);
 __u32 get_current_block_number(struct inode_gate *ig);
 
 __u32 next_block(struct inode_gate *ig);
