@@ -161,7 +161,7 @@ void debug_inode_gate(__u32 id, struct ext2_file_system *fs) {
     inode_gate_init(&ig, fs, &inode);
     printf("inode gate with id: %u\n", id);
     int i;
-    for (i = 0; i < get_real_size_in_blocks(&ig); i++) {
+    for (i = 0; i < get_real_size_in_alloc_blocks(&ig); i++) {
         printf("Block number %u: %u\n", i, get_current_block_id(&ig));
         next_block(&ig);
     }

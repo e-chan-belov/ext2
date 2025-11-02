@@ -50,22 +50,58 @@ __u32 ext2_file_system_init(struct ext2_file_system *fs, const char *file) {
     return 0;
 }
 
-__u32 ext2_file_system_destroy(struct ext2_file_system *fs) {
-    void *ptr = mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_PRIVATE, fs->fd, 0);
-    *(struct super_block*)(ptr + 1024) = fs->sb;
-    munmap(ptr, 4096);
-    __u32 sz = fs->groups_count * sizeof(struct block_group_descriptor);
-    ptr = mmap(NULL, sz, PROT_READ | PROT_WRITE, MAP_PRIVATE, fs->fd, (1 + fs->sb.s_first_data_block) * fs->block_size); // THIS MAY CAUSE MAP_FAILED!!!!!
-
-    __u32 i;
-    
-    struct block_group_descriptor *tmp_ptr = ptr;
+static void save_super_block_and_bgdt_at_address(struct ext2_file_system *fs, void *ptr) {
+    *(struct super_block*)ptr = fs->sb;
+    struct block_group_descriptor *bgdt_ptr = (ptr + get_block_size_from_fs(fs));
+    int i;
     for (i = 0; i < fs->groups_count; i++) {
-        *tmp_ptr = fs->bgdt[i];
+        bgdt_ptr[i] = fs->bgdt[i];
     }
-    munmap(ptr, sz);
-    if (fs->last_block_bitmap != 0) { free(fs->last_block_bitmap); }
-    if (fs->last_inode_bitmap != 0) { free(fs->last_inode_bitmap); }
+}
+
+static void save_super_block_and_bgdt_at_powers_of(struct ext2_file_system *fs, int power) {
+    __u32 bytes_in_group = get_block_size_from_fs(fs) * fs->sb.s_blocks_per_group;
+    int i;
+    void *ptr;
+    __u32 size_in_bytes = get_block_size_from_fs(fs) + fs->groups_count * sizeof(struct block_group_descriptor);
+    for (i = power; i < fs->groups_count; i *= power) {
+        ptr = mmap(NULL, size_in_bytes, PROT_WRITE | PROT_READ, MAP_SHARED, fs->fd, bytes_in_group * i);
+        save_super_block_and_bgdt_at_address(fs, ptr);
+        munmap(ptr, size_in_bytes);
+    }
+}
+// sparse super_block
+static void save_super_block_and_bgdt_at_chosen_groups(struct ext2_file_system *fs) {
+    void *ptr;
+    __u32 bytes_in_group = get_block_size_from_fs(fs) * fs->sb.s_blocks_per_group;
+    __u32 size_in_bytes = get_block_size_from_fs(fs) + fs->groups_count * sizeof(struct block_group_descriptor);
+    if (fs->groups_count > 0) {
+        ptr = mmap(NULL, 2048, PROT_READ | PROT_WRITE, MAP_SHARED, fs->fd, 0);
+        *(struct super_block*)ptr = fs->sb;
+        munmap(ptr, 2048);
+
+        ptr = mmap(NULL, bytes_in_group, PROT_READ | PROT_WRITE, MAP_SHARED, fs->fd, (1 + fs->sb.s_first_data_block) * fs->block_size);
+        __u32 i;
+        struct block_group_descriptor *tmp_ptr = ptr;
+        for (i = 0; i < fs->groups_count; i++) {
+            tmp_ptr[i] = fs->bgdt[i];
+        }
+        munmap(ptr, bytes_in_group);
+    }
+    if (fs->groups_count > 1) {
+        ptr = mmap(NULL, size_in_bytes, PROT_READ | PROT_WRITE, MAP_SHARED, fs->fd, bytes_in_group);
+        save_super_block_and_bgdt_at_address(fs, ptr);
+        munmap(ptr, size_in_bytes);
+    }
+    save_super_block_and_bgdt_at_powers_of(fs, 3);
+    save_super_block_and_bgdt_at_powers_of(fs, 5);
+    save_super_block_and_bgdt_at_powers_of(fs, 7);
+}
+
+__u32 ext2_file_system_destroy(struct ext2_file_system *fs) {
+    save_super_block_and_bgdt_at_chosen_groups(fs);
+    if (fs->last_block_bitmap != 0) { block_munmap(fs, fs->last_block_bitmap); }
+    if (fs->last_inode_bitmap != 0) { block_munmap(fs, fs->last_inode_bitmap); }
     free(fs->bgdt);
     close(fs->fd);
     return 0;
@@ -93,7 +129,7 @@ __u32 set_bgd(struct ext2_file_system *fs, struct block_group_descriptor bgd,__u
 // please be aware that it can fail because of a page size
 // it doesn't fail for 4K block size
 void* block_mmap(struct ext2_file_system *fs, __u32 id) {
-    void *ptr = mmap(NULL, fs->block_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fs->fd, fs->block_size * id);
+    void *ptr = mmap(NULL, fs->block_size, PROT_READ | PROT_WRITE, MAP_SHARED, fs->fd, fs->block_size * id);
     if (ptr == MAP_FAILED) {
         printf("BLOCK_MMAP FAILURE!!! BLOCK ID: %u AND BLOCK SIZE: %u", id, fs->block_size);
         return NULL;
