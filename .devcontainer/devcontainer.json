@@ -7,9 +7,6 @@
     "settings": {
       "terminal.integrated.shell.linux": "/bin/bash"
     },
-    "mounts": [
-    "source=${localWorkspaceFolder}/disk.img,target=/mnt/disk.img,type=bind"
-    ],
     "extensions": [
       "ms-vscode.cpptools",
       "ms-vscode.cpptools-extension-pack",

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eux
 
-DISK_FILE=/mnt/disk.img
+DISK_FILE=/workspaces/ext2_test_first/disk.img
 MOUNT_POINT=/mnt/virtual_disk
 
 if [ ! -f "$DISK_FILE" ]; then
