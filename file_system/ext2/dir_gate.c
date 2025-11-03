@@ -94,10 +94,10 @@ __u32 prev_step(struct dir_gate *dg) {
         // WARNING: IGNORING ABSTRACTION!!!
         __u8 is_id_flag = dir_link_is_id(&dg->dl);
         struct dir_link_node *ptr = dg->dl.head;
-        while (!is_id_flag) {
+        while (!is_id_flag && ptr != 0) {
             dg->offset += ptr->value;
             ptr = ptr->prev;
-            is_id_flag = ptr->is_id;
+            if (ptr != 0) { is_id_flag = ptr->is_id; }
         }
         return 0;
     }
