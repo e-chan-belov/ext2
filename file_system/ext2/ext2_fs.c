@@ -304,8 +304,9 @@ __u32 put_inode(struct ext2_file_system *fs, struct inode inode_, __u32 inode_id
     __u32 block_group_index = (inode_id - 1) / fs->sb.s_inodes_per_group;
     __u32 local_inode_index = (inode_id - 1) % fs->sb.s_inodes_per_group;
     __u32 id = fs->bgdt[block_group_index].bg_inode_table + local_inode_index / (fs->block_size / fs->sb.s_inode_size);
-    struct inode *ptr = block_mmap(fs, id);
-    *ptr = inode_;
+    void *ptr = block_mmap(fs, id);
+    struct inode *temp = (struct inode*)(ptr + fs->sb.s_inode_size * (local_inode_index % (fs->block_size / fs->sb.s_inode_size)));
+    *temp = inode_;
     block_munmap(fs, ptr);
     return 0;
 }
