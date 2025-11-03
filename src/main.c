@@ -14,7 +14,7 @@
 
 int main() {
     struct ext2_file_system current;
-    int err = ext2_file_system_init(&current, "/mnt/disk.img");
+    int err = ext2_file_system_init(&current, "/workspaces/ext2_test_first/disk.img");
     if (err < 0) { 
         printf("%d\n", err);
         return err; 
@@ -29,9 +29,13 @@ int main() {
     }
     
 
-    struct inode first = read_inode(&current, 13);
+    struct inode first = read_inode(&current, 12);
     debug_inode(first);
-    debug_inode_gate(13, &current);
+    debug_inode_gate(12, &current);
+
+    __u32 inode_ = first_free_inode(&current, 12);
+    inode_alloc(&current, inode_);
+    add_new_entry(&current, 2, "TEST.c", 1, inode_);
 
     struct dir_gate dg;
     dir_gate_init(&dg, &current, 2);
@@ -39,24 +43,20 @@ int main() {
     next_entry(&dg);
     next_entry(&dg);
     next_entry(&dg);
-    next_entry(&dg);
-    next_entry(&dg);
-    next_entry(&dg);
-    next_entry(&dg);
+
+    printf("%d\n", is_inode_used(&current, 12));
     
     struct ext2_dir_entry cur_dentry = get_current_entry(&dg);
     debug_ext2_dir_entry(&cur_dentry);
 
     printf("TESTING!\n");
 
-    //__u32 new_inode = first_free_inode(&current, 1);
-    //inode_alloc(&current, new_inode);
-    //printf("%u\n", is_inode_used(&current, 16));
-    //const char *name = "TEST";
-    //add_new_entry(&dg, name, 0, new_inode);
-
 
     ext2_dir_entry_destroy(&cur_dentry);
+
+    next_entry(&dg);
+    cur_dentry = get_current_entry(&dg);
+    debug_ext2_dir_entry(&cur_dentry);
     dir_gate_destroy(&dg);
     
     ext2_file_system_destroy(&current);

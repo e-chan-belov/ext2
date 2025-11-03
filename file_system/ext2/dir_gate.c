@@ -42,13 +42,17 @@ __u32 dir_gate_destroy(struct dir_gate *dg) {
     return 0;
 }
 
+__u8 has_next_entry(struct dir_gate *dg) {
+    return get_current_block_number(&dg->ig) + 1 < get_real_size_in_alloc_blocks(&dg->ig);
+}
+
 __u32 next_entry(struct dir_gate *dg) {
     struct ext2_dir_entry entry = *(struct ext2_dir_entry*)(dg->current_block + dg->offset);
     dg->offset += entry.rec_len;
     dir_link_add_value(&dg->dl, entry.rec_len, 0);
 
     if (dg->offset == get_block_size_from_fs(dg->ig.fs)) {
-        if (dg->ig.inode->i_size == get_current_block_number(&(dg->ig)) + 1) {
+        if (!has_next_entry(dg)) {
             return 1;
         }
         block_munmap(dg->ig.fs, dg->current_block);
@@ -116,12 +120,24 @@ struct ext2_dir_entry get_current_entry(struct dir_gate *dg) {
     return dentry;
 }
 
+static void release_one_hard_link_of_inode(struct ext2_file_system *fs, __u32 id) {
+    struct inode inode = read_inode(fs, id);
+    inode.i_links_count--;
+    if (inode.i_links_count == 0) {
+        // todo
+        free_inode(fs, id);
+    }
+    else {
+        put_inode(fs, inode, id);
+    }
+}
+
 __u32 delete_current_entry(struct dir_gate *dg) {
     struct ext2_dir_entry entry = *(struct ext2_dir_entry*)(dg->current_block + dg->offset);
     if (entry.name_len == 1 && entry.name[0] == '.' ||
     entry.name_len == 2 && entry.name[0] == '.' && entry.name[1] == '.') { return 1; }
     __u32 cur_len = entry.rec_len;
-
+    release_one_hard_link_of_inode(dg->ig.fs, entry.inode);
     dg->offset -= dir_link_get_value(&dg->dl);
     dir_link_remove_value(&dg->dl);
 
@@ -135,7 +151,7 @@ static __u32 get_name_size_in_alloc_bytes(const char *name) {
     int i = 0;
     while(name[i] != 0) { i++; }
     int bytes = CEIL_DIV(i, sizeof(__u32));
-    return i;
+    return bytes;
 }
 static __u32 get_real_rec_len(const char *name) {
     return sizeof(__u32) * (2 + get_name_size_in_alloc_bytes(name));
@@ -144,66 +160,58 @@ static __u32 get_real_rec_len_with_len(__u32 name_len) {
     return sizeof(__u32) * (2 + CEIL_DIV(name_len, sizeof(__u32)));
 }
 
-static void enter_new_entry_at_pointer(__u32 inode, __u16 rec_len, __u8 file_type, const char *name, void *ptr, __s32 rest) {
-    *(__u32*)ptr = inode;
-    *(__u16*)(ptr + sizeof(__u32)) = rec_len + rest;
-    __u8 i = 0;
+static __u8 is_current_entry_addable(struct dir_gate *dg, __u32 rec_len) {
+    struct ext2_dir_entry dentry = *(struct ext2_dir_entry*)(dg->current_block + dg->offset);
+    return dentry.rec_len >= get_real_rec_len_with_len(dentry.name_len) + rec_len;
+}
+
+static void enter_new_entry_at_pointer(__u32 inode, __u8 file_type, const char *name, void *new_entry_ptr, __s32 rest) {
+    *(__u32*)(new_entry_ptr) = inode;
+    *(__u16*)(new_entry_ptr + sizeof(__u32)) = rest;
+    *(__u8*)(new_entry_ptr + sizeof(__u32) + sizeof(__u16) + sizeof(__u8)) = file_type;
+    __u32 i = 0;
     while(name[i] != 0) {
-        *(__u8*)(ptr + 2 * sizeof(__u32) + i) = name[i];
+        *(__u8*)(new_entry_ptr + 2 * sizeof(__u32) + i) = name[i];
         i++; 
     }
+    *(__u8*)(new_entry_ptr + sizeof(__u32) + sizeof(__u16)) = i;
     int j;
     for (j = i; j < sizeof(__u32) * CEIL_DIV(i, sizeof(__u32)); j++) {
-        *(__u8*)(ptr + 2 * sizeof(__u32) + j) = 0;
+        *(__u8*)(new_entry_ptr + 2 * sizeof(__u32) + j) = 0;
     }
-    *(__u8*)(ptr + sizeof(__u32) + sizeof(__u16)) = i;
-    *(__u8*)(ptr + sizeof(__u32) + sizeof(__u16) + sizeof(__u8)) = file_type;
-
 }
-__u32 add_new_entry(struct dir_gate *dg, const char *name,__u8 file_type, __u32 inode) {
-    
-    struct inode_gate ig;
-    inode_gate_init(&ig, dg->ig.fs, dg->ig.inode);
-    void *ptr = block_mmap(ig.fs, get_current_block_id(&ig));
-    struct ext2_dir_entry entry = *(struct ext2_dir_entry*)ptr;
-    __u32 req_rec_len = get_real_rec_len(name);
-    __u32 offset = 0;
-    __u32 block_offset = 0;
-    __u32 total_size_in_blocks = ig.inode->i_size / get_block_size_from_fs(ig.fs);
-    while (block_offset < total_size_in_blocks) {
-        while (offset < get_block_size_from_fs(ig.fs)) {
-            __s32 rest = entry.rec_len - (get_real_rec_len_with_len(entry.name_len) + req_rec_len);
-            if (rest > 0) {
-                *(__u16*)(ptr + offset + sizeof(__u32)) -= rest;
-                enter_new_entry_at_pointer(inode, req_rec_len, file_type, name, ptr + offset, rest);
-                block_munmap(ig.fs, ptr);
-                inode_gate_destroy(&ig);
-                return 0;
-            }
-            offset += entry.rec_len;
-            if (offset != get_block_size_from_fs(ig.fs)) {
-                entry = *(struct ext2_dir_entry*)(ptr + offset);
-            }
-        }
-        offset = 0;
-        block_offset++;
-        if (block_offset != total_size_in_blocks) {
-            block_munmap(ig.fs, ptr);
-            next_block(&ig);
-            ptr = block_mmap(ig.fs, get_current_block_id(&ig));
-            entry = *(struct ext2_dir_entry*)ptr;
+
+static __u32 add_new_entry_to_current_entry(void* ptr, const char *name, __u8 file_type, __u32 inode) {
+    __u32 old_rest = ((struct ext2_dir_entry*)(ptr))->rec_len - get_real_rec_len_with_len(((struct ext2_dir_entry*)(ptr))->name_len);
+    ((struct ext2_dir_entry*)(ptr))->rec_len -= old_rest;
+    void *new_entry_ptr = ptr + ((struct ext2_dir_entry*)ptr)->rec_len;
+    enter_new_entry_at_pointer(inode, file_type, name, new_entry_ptr, old_rest);
+}
+
+static void add_one_hard_link_of_inode(struct ext2_file_system *fs, __u32 id) {
+    struct inode inode = read_inode(fs, id);
+    inode.i_links_count++;
+    put_inode(fs, inode, id);
+}
+
+__u32 add_new_entry(struct ext2_file_system *fs, __u32 dir, const char *name, __u8 file_type, __u32 inode) {
+    struct dir_gate dg;
+    dir_gate_init(&dg, fs, dir);
+    for (; get_current_block_number(&dg.ig) < get_real_size_in_alloc_blocks(&dg.ig); next_entry(&dg)) {
+        if (is_current_entry_addable(&dg, get_real_rec_len(name))) {
+            add_new_entry_to_current_entry(dg.current_block + dg.offset, name, file_type, inode);
+            add_one_hard_link_of_inode(dg.ig.fs, inode);
+            return 0;
         }
     }
-    __u32 new_block = first_free_block(ig.fs, get_current_block_number(&ig));
-    block_alloc(ig.fs, new_block);
-    append_block(&ig, new_block);
+    __u32 hint = get_current_block_number(&dg.ig) + 1;
+    __u32 block = first_free_block(dg.ig.fs, hint);
+    block_alloc(dg.ig.fs, block);
+    append_block(&dg.ig, block);
 
-    block_munmap(ig.fs, ptr);
-    next_block(&ig);
-    ptr = block_mmap(ig.fs, get_current_block_id(&ig));
-    entry = *(struct ext2_dir_entry*)ptr;
-    enter_new_entry_at_pointer(inode, req_rec_len, file_type, name, ptr + offset, get_block_size_from_fs(ig.fs) - req_rec_len);
-    block_munmap(ig.fs, ptr);
-    inode_gate_destroy(&ig);
-    return 0;
+    next_entry(&dg);
+    enter_new_entry_at_pointer(inode, file_type, name, dg.current_block, get_block_size_from_fs(dg.ig.fs));
+    add_one_hard_link_of_inode(dg.ig.fs, inode);
+
+    dir_gate_destroy(&dg);
 }
