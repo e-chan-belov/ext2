@@ -21,9 +21,9 @@ static __u32 alloc_new_inode_gate_at_dir(struct dir_gate *dg, struct ext2_file_s
 }
 
 static __u32 free_inode_gate_and_cache_at_dir(struct dir_gate *dg) {
+    put_inode(dg->ig.fs, *dg->ig.inode, dg->id);
     free(dg->ig.inode);
     if (dg->current_block != NULL) { block_munmap(dg->ig.fs, dg->current_block); };
-    put_inode(dg->ig.fs, *dg->ig.inode, dg->id);
     if (inode_gate_destroy(&(dg->ig)) != 0) { return 1; }
     return 0;
 }

@@ -46,6 +46,7 @@ int main() {
 
     next_entry(&dg);
     next_entry(&dg);
+    next_entry(&dg);
 
     //printf("%d\n", is_inode_used(&current, 12));
     
@@ -63,9 +64,7 @@ int main() {
     ext2_dir_entry_destroy(&cur_dentry);
 
     //delete_current_entry(&dg);
-    //free_inode(&current, 12);
-    printf("%d\n", is_inode_used(&current, 12));
-    //debug_inode(read_inode(&current, 12));
+    printf("%d\n", is_inode_used(&current, 13));
     dir_gate_destroy(&dg);
     
     ext2_file_system_destroy(&current);
