@@ -1,0 +1,85 @@
+@startuml usecase_inode_gate_traversing
+actor "Virtual Layer" as u
+box ext2_file_system
+  entity "Inode Gate" as ig
+  participant "File System" as fs
+  entity "Physical File System" as pfs
+box end
+group reading inode
+    u -> fs++ : read_inode(fs, id)
+    fs -> fs : calculating block id containing inode
+    fs -> pfs++ : block_mmap(fs, block_id)
+    pfs -->> fs : ptr
+    fs -> fs : reading inode via ptr
+    fs ->> pfs : block_munmap(fs, ptr)
+    deactivate pfs
+    fs -->> u-- : struct inode
+end
+group inode_gate init
+    u ->> ig++ : inode_gate_init(ig, fs, inode)
+    ig -> ig-- : initializing inode_gate data fields
+end
+group calculating inode size in appliable blocks
+    u -> ig++ : get_real_size_in_alloc_blocks(ig)
+    ig -> ig : calculating amount of ALL blocks from i_blocks to get size
+    opt first indirect block exists
+        ig -> ig : removing first indirect block from count
+    end
+    opt second indirect block exists
+        ig -> fs++ : caching second indirect block
+        fs -> pfs++ : maps, unmaps memory or doesn't change anything
+        pfs -->> fs-- : result of second indirect block caching
+        fs -->> ig-- : result of second indirect block caching
+        ig -> ig : removing all blocks from second indirect block from count
+    end
+    opt third indirect block exists
+        ig -> fs++ : caching third indirect block and all second indirect from it
+        fs -> pfs++ : maps, unmaps memory or doesn't change anything
+        pfs -->> fs-- : result of third indirect block caching
+        fs -->> ig-- : result of third indirect block caching
+        ig -> ig : removing all blocks from third indirect block from count
+    end
+    ig -->> u-- : size_in_blocks
+end
+group collecting blocks allocated to inode
+    loop block_index < size_in_blocks
+        u -> ig++ : get_current_block_id(ig)
+        ig -> ig : calculating which direct and indirect blocks are required using logical counter
+        ig -> fs++ : caching required blocks
+        fs -> pfs++ : maps, unmaps memory or doesn't change anything
+        pfs -->> fs-- : result of block caching
+        fs -->> ig-- : result of block caching
+        ig -> ig : finding required block through direct and indirect blocks
+        ig -->> u-- : block_id
+        u -> fs++ : block_mmap(fs, block_id)
+        fs -> pfs++ : mapping block
+        pfs -->> fs-- : ptr
+        fs -->> u-- : ptr
+        u -> u : copying or changing the contents of a block via ptr
+        u ->> fs++ : block_munmap(fs, ptr)
+        fs ->> pfs++ : unmapping block
+        deactivate pfs
+        deactivate fs
+        u ->> ig++ : next_block(ig)
+        ig -> ig-- : updating the logical counter
+        u -> u : block_index++
+    end
+end
+group inode_gate destroy
+    u ->> ig++ : inode_gate_destroy(ig)
+    ig ->> fs++ : munmap of cached blocks
+    fs ->> pfs++ : munmap
+    deactivate pfs
+    deactivate fs
+    deactivate ig
+end
+group putting inode into file system
+    u ->> fs++ : put_inode(fs, inode)
+    fs -> fs : calculating block id containing inode
+    fs -> pfs++ : block_mmap(fs, block_id)
+    pfs -->> fs : ptr
+    fs -> fs : copying given inode via ptr
+    fs ->> pfs-- : block_munmap(fs, ptr)
+    deactivate pfs
+end
+@enduml

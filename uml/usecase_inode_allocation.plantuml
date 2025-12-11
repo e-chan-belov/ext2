@@ -1,0 +1,77 @@
+@startuml inode_allocation
+actor "Virtual Layer" as u
+box ext2_file_system
+  participant "File System" as fs
+  entity "Inode Bitmap" as ibm
+  entity "Physical File System" as pfs
+box end
+group free_inodes_count check
+  u -> fs++ : get_super_block(fs)
+  fs -->> u-- : super_block
+  alt s_free_inodes_count == 0
+    u -> u : error_code
+    destroy u
+  end
+end
+group finding global inode id of the first free inode after hint
+  u -> fs++ : first_free_inode(&fs, hint)
+  loop id < s_inodes_count and inode by this id is used
+    fs -> ibm++ : is_inode_used(fs, id)
+    ibm -> ibm : calculating group containing given inode id
+    ibm -> pfs++ : check_and_change_inode_bitmap(fs, group)
+    alt no_cached_bitmap
+      pfs -->> ibm : block_mmap(fs, bitmap_block_id)
+    else bitmap_cache_miss
+      pfs -->> ibm : block_munmap(fs, old_bitmap_block_id)
+      pfs -->> ibm-- : block_mmap(fs, bitmap_block_id)
+    end
+    ibm -->> fs-- : checking bitmap and return answer
+    fs -> fs : id++
+  end
+  alt free inode found
+    fs -->> u--: global_inode_id
+  else no free inodes
+    fs -->> u: error_code
+    destroy u
+  end
+end
+group space allocation for the new inode
+  u ->> fs++ : inode_alloc(fs, global_inode_id)
+    fs -> ibm++ : is_inode_used(fs, id)
+    ibm -> ibm : calculating group containing given inode id
+    ibm -> pfs++ : check_and_change_inode_bitmap(fs, group)
+    alt no_cached_bitmap
+      pfs -->> ibm : block_mmap(fs, bitmap_block_id)
+    else bitmap_cache_miss
+      pfs -->> ibm : block_munmap(fs, old_bitmap_block_id)
+      pfs -->> ibm-- : block_mmap(fs, bitmap_block_id)
+    end
+    ibm -->> fs-- : checking bitmap and return answer
+  fs -> fs : free_inodes_count in sb and bgd decreased
+  fs ->> ibm++ : set_bit_inode_bitmap(fs, id)
+  deactivate fs
+  ibm -> ibm : calculating group containing given inode id
+  ibm -> pfs++ : check_and_change_inode_bitmap(fs, group)
+  alt no_cached_bitmap
+    pfs -->> ibm : block_mmap(fs, bitmap_block_id)
+  else bitmap_cache_miss
+    pfs -->> ibm : block_munmap(fs, old_bitmap_block_id)
+    pfs -->> ibm-- : block_mmap(fs, bitmap_block_id)
+  end
+  ibm -> ibm-- : changing bit in the bitmap
+
+  deactivate fs
+end
+group creating inode
+  u -> u : create inode with global_inode_id
+end
+group putting inode into file system
+  u ->> fs++ : put_inode(fs, inode)
+  fs -> fs : calculating block id containing inode
+  fs -> pfs++ : block_mmap(fs, block_id)
+  pfs -->> fs : ptr
+  fs -> fs : copying given inode via ptr
+  fs ->> pfs-- : block_munmap(fs, ptr)
+  deactivate pfs
+end
+@enduml
