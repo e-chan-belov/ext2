@@ -50,8 +50,9 @@ __u32 ext2_file_system_init(struct ext2_file_system *fs, const char *file) {
     return 0;
 }
 
-static void save_super_block_and_bgdt_at_address(struct ext2_file_system *fs, void *ptr) {
+static void save_super_block_and_bgdt_at_address(struct ext2_file_system *fs, void *ptr, __u16 id) {
     *(struct super_block*)ptr = fs->sb;
+    ((struct super_block*)ptr)->s_block_group_nr = id;
     struct block_group_descriptor *bgdt_ptr = (ptr + get_block_size_from_fs(fs));
     int i;
     for (i = 0; i < fs->groups_count; i++) {
@@ -66,7 +67,7 @@ static void save_super_block_and_bgdt_at_powers_of(struct ext2_file_system *fs, 
     __u32 size_in_bytes = get_block_size_from_fs(fs) + fs->groups_count * sizeof(struct block_group_descriptor);
     for (i = power; i < fs->groups_count; i *= power) {
         ptr = mmap(NULL, size_in_bytes, PROT_WRITE | PROT_READ, MAP_SHARED, fs->fd, bytes_in_group * i);
-        save_super_block_and_bgdt_at_address(fs, ptr);
+        save_super_block_and_bgdt_at_address(fs, ptr, i);
         munmap(ptr, size_in_bytes);
     }
 }
@@ -90,7 +91,7 @@ static void save_super_block_and_bgdt_at_chosen_groups(struct ext2_file_system *
     }
     if (fs->groups_count > 1) {
         ptr = mmap(NULL, size_in_bytes, PROT_READ | PROT_WRITE, MAP_SHARED, fs->fd, bytes_in_group);
-        save_super_block_and_bgdt_at_address(fs, ptr);
+        save_super_block_and_bgdt_at_address(fs, ptr, 1);
         munmap(ptr, size_in_bytes);
     }
     save_super_block_and_bgdt_at_powers_of(fs, 3);
