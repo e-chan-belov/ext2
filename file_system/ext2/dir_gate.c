@@ -1,16 +1,19 @@
 #include "dir_gate.h"
 
 __u32 ext2_dir_entry_init(struct ext2_dir_entry *dentry, void* ptr) {
-    *dentry = *(struct ext2_dir_entry*)ptr;
-    dentry->name = malloc(sizeof(__u8) * dentry->name_len);
+    dentry->inode = ((struct ext2_dir_entry*)ptr)->inode;
+    dentry->rec_len = ((struct ext2_dir_entry*)ptr)->rec_len;
+    dentry->name_len = ((struct ext2_dir_entry*)ptr)->name_len;
+    dentry->file_type = ((struct ext2_dir_entry*)ptr)->file_type;
     int i;
     for (i = 0; i < dentry->name_len; i++) {
-        dentry->name[i] = *(__u8*)(ptr + sizeof(__u64) + i);
+        dentry->name[i] = ((struct ext2_dir_entry*)ptr)->name[i];
     }
+    dentry->name[i] = 0;
     return 0;
 }
-__u32 ext2_dir_entry_destroy(struct ext2_dir_entry *dentry) {
-    free(dentry->name);
+const char* ext2_dir_entry_get_name(struct ext2_dir_entry *dentry) {
+    return dentry->name;
 }
 
 static __u32 alloc_new_inode_gate_at_dir(struct dir_gate *dg, struct ext2_file_system* fs, __u32 inode) {
