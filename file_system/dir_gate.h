@@ -2,6 +2,7 @@
 
 #include "inode_gate.h"
 #include "dir_link.h"
+#include "__u32_stack.h"
 
 struct ext2_dir_entry {
 	__u32	inode;			// Inode number 

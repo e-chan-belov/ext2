@@ -71,7 +71,7 @@ __u32 next_entry(struct dir_gate *dg) {
     }
     return 0;
 }
-__u32 entry_current_dir(struct dir_gate *dg) { // todo: review
+__u32 entry_current_dir(struct dir_gate *dg) {
     struct ext2_dir_entry entry;
     ext2_dir_entry_init(&entry, dg->current_block + dg->offset);
     if (entry.file_type != 2) { return 1; }
@@ -142,16 +142,45 @@ static void release_one_hard_link_of_inode(struct ext2_file_system *fs, __u32 id
     }
 }
 
+static void unlink_block_from_inode_and_move_chains_of_blocks(struct inode_gate *ig, __u32 target_block_id) {
+    struct __u32_stack stack;
+    __u32_stack_init(&stack);
+    __u32 current_block_id = unlink_last_block(ig);
+    while (current_block_id != target_block_id) {
+        __u32_stack_push(&stack, current_block_id);
+        current_block_id = unlink_last_block(ig);
+    }
+    if (!__u32_stack_empty(&stack)) {
+        __u32 block_id = 0;
+        while (!__u32_stack_empty(&stack)) {
+            block_id = __u32_stack_head(&stack);
+            append_block(ig, block_id);
+            __u32_stack_pop(&stack);
+        }
+        
+    }
+    __u32_stack_destroy(&stack);
+}
+
 __u32 delete_current_entry(struct dir_gate *dg) {
     struct ext2_dir_entry entry;
     ext2_dir_entry_init(&entry, dg->current_block + dg->offset);
     if (entry.name_len == 1 && entry.name[0] == '.' ||
     entry.name_len == 2 && entry.name[0] == '.' && entry.name[1] == '.') { return 1; }
     if (dg->offset == 0) {
-        //__u32 block_id = get_current_block_id(&(dg->ig));
-        //__u32 inode_gate_error = prev_block(&(dg->ig));
-        //if (inode_gate_error != 0) { return 1; } 
-        // todo: delete blocks with no entries
+        block_munmap(dg->ig.fs, dg->current_block);
+        release_one_hard_link_of_inode(dg->ig.fs, entry.inode);
+        
+        __u32 block_id = get_current_block_id(&(dg->ig));
+        __u32 inode_gate_error = prev_block(&(dg->ig));
+        if (inode_gate_error != 0) { return 1; } 
+        unlink_block_from_inode_and_move_chains_of_blocks(&(dg->ig), block_id);
+        free_block(dg->ig.fs, block_id);
+
+        dg->offset = get_block_size_from_fs(dg->ig.fs);
+        dg->offset -= dir_link_get_value(&dg->dl);
+        dir_link_remove_value(&dg->dl);
+        dg->current_block = block_mmap(dg->ig.fs, get_current_block_id(&dg->ig));
     } else {
         __u32 cur_len = entry.rec_len;
         release_one_hard_link_of_inode(dg->ig.fs, entry.inode);
