@@ -29,6 +29,7 @@ __u32 inode_gate_destroy(struct inode_gate *ig);
 
 struct inode get_inode_copy(struct inode_gate *ig);
 
+// returns amount of blocks containing file data. indirect blocks are not counted.
 __u32 get_real_size_in_alloc_blocks(struct inode_gate *ig);
 __u32 get_current_block_number(struct inode_gate *ig);
 

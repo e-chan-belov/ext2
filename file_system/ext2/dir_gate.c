@@ -33,6 +33,10 @@ static __u32 free_inode_gate_and_cache_at_dir(struct dir_gate *dg) {
 
 __u32 dir_gate_init(struct dir_gate *dg, struct ext2_file_system *fs, __u32 inode) {
     alloc_new_inode_gate_at_dir(dg, fs, inode);
+    if (get_real_size_in_alloc_blocks(&(dg->ig)) == 0) {
+        free_inode_gate_and_cache_at_dir(dg);
+        return 1;
+    }
 
     dir_link_init(&dg->dl);
     dg->offset = 0;
@@ -50,7 +54,8 @@ __u8 has_next_entry(struct dir_gate *dg) {
 }
 
 __u32 next_entry(struct dir_gate *dg) {
-    struct ext2_dir_entry entry = *(struct ext2_dir_entry*)(dg->current_block + dg->offset);
+    struct ext2_dir_entry entry;
+    ext2_dir_entry_init(&entry, (dg->current_block + dg->offset));
     dg->offset += entry.rec_len;
     dir_link_add_value(&dg->dl, entry.rec_len, 0);
 
@@ -67,7 +72,8 @@ __u32 next_entry(struct dir_gate *dg) {
     return 0;
 }
 __u32 entry_current_dir(struct dir_gate *dg) { // todo: review
-    struct ext2_dir_entry entry = *(struct ext2_dir_entry*)(dg->current_block + dg->offset);
+    struct ext2_dir_entry entry;
+    ext2_dir_entry_init(&entry, dg->current_block + dg->offset);
     if (entry.file_type != 2) { return 1; }
     dir_link_add_value(&dg->dl, dg->id, 1);
 
@@ -106,9 +112,10 @@ __u32 prev_step(struct dir_gate *dg) {
     }
     else {
         if (dg->offset == 0) {
+            __u32 inode_gate_error = prev_block(&dg->ig);
+            if (inode_gate_error != 0) { return 1; }
             dg->offset = get_block_size_from_fs(dg->ig.fs);
             block_munmap(dg->ig.fs, dg->current_block);
-            prev_block(&dg->ig);
             dg->current_block = block_mmap(dg->ig.fs, get_current_block_id(&dg->ig));
         }
         dg->offset -= dir_link_get_value(&dg->dl);
@@ -136,16 +143,24 @@ static void release_one_hard_link_of_inode(struct ext2_file_system *fs, __u32 id
 }
 
 __u32 delete_current_entry(struct dir_gate *dg) {
-    struct ext2_dir_entry entry = *(struct ext2_dir_entry*)(dg->current_block + dg->offset);
+    struct ext2_dir_entry entry;
+    ext2_dir_entry_init(&entry, dg->current_block + dg->offset);
     if (entry.name_len == 1 && entry.name[0] == '.' ||
     entry.name_len == 2 && entry.name[0] == '.' && entry.name[1] == '.') { return 1; }
-    __u32 cur_len = entry.rec_len;
-    release_one_hard_link_of_inode(dg->ig.fs, entry.inode);
-    dg->offset -= dir_link_get_value(&dg->dl);
-    dir_link_remove_value(&dg->dl);
-
-    struct ext2_dir_entry *dentry = (struct ext2_dir_entry*)(dg->current_block + dg->offset);
-    dentry->rec_len += cur_len;
+    if (dg->offset == 0) {
+        //__u32 block_id = get_current_block_id(&(dg->ig));
+        //__u32 inode_gate_error = prev_block(&(dg->ig));
+        //if (inode_gate_error != 0) { return 1; } 
+        // todo: delete blocks with no entries
+    } else {
+        __u32 cur_len = entry.rec_len;
+        release_one_hard_link_of_inode(dg->ig.fs, entry.inode);
+        dg->offset -= dir_link_get_value(&dg->dl);
+        dir_link_remove_value(&dg->dl);
+    
+        struct ext2_dir_entry *dentry = (struct ext2_dir_entry*)(dg->current_block + dg->offset);
+        *(__u16*)(dentry + sizeof(__u32)) = cur_len + *(__u16*)(dentry + sizeof(__u32));
+    }
     return 0;
 
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "types.h"
+#include <stdlib.h>
 
 // value is either offset or inode id
 struct dir_link_node {
