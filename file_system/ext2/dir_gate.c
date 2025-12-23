@@ -186,8 +186,8 @@ __u32 delete_current_entry(struct dir_gate *dg) {
         release_one_hard_link_of_inode(dg->ig.fs, entry.inode);
         dg->offset -= dir_link_get_value(&dg->dl);
         dir_link_remove_value(&dg->dl);
-    
-        struct ext2_dir_entry *dentry = (struct ext2_dir_entry*)(dg->current_block + dg->offset);
+        
+        void *dentry = (struct ext2_dir_entry*)(dg->current_block + dg->offset);
         *(__u16*)(dentry + sizeof(__u32)) = cur_len + *(__u16*)(dentry + sizeof(__u32));
     }
     return 0;
