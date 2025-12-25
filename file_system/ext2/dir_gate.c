@@ -162,7 +162,7 @@ static void unlink_block_from_inode_and_move_chains_of_blocks(struct inode_gate 
     __u32_stack_destroy(&stack);
 }
 
-__u32 delete_current_entry(struct dir_gate *dg) {
+__u32 delete_current_entry(struct dir_gate *dg) { // todo: add recursive entry deletion
     struct ext2_dir_entry entry;
     ext2_dir_entry_init(&entry, dg->current_block + dg->offset);
     if (entry.name_len == 1 && entry.name[0] == '.' ||
@@ -241,13 +241,32 @@ static void add_one_hard_link_of_inode(struct ext2_file_system *fs, __u32 id) {
     put_inode(fs, inode, id);
 }
 
-__u32 add_new_entry(struct ext2_file_system *fs, __u32 dir, const char *name, __u8 file_type, __u32 inode) {
+__u32 add_new_entry(struct ext2_file_system *fs, __u32 dir, const char *name, __u8 file_type, __u32 inode_id) {
     struct dir_gate dg;
-    dir_gate_init(&dg, fs, dir);
+    __u32 error = dir_gate_init(&dg, fs, dir);
+    if (error == 1) {
+        struct inode inode = read_inode(fs, dir);
+        struct inode_gate ig;
+        inode_gate_init(&ig, fs, &inode);
+
+        __u32 block_id = first_free_block(fs, 1);
+        block_alloc(fs, block_id);
+        append_block(&ig, block_id);
+
+        void* ptr = block_mmap(fs, block_id);
+
+        enter_new_entry_at_pointer(dir, file_type, name, ptr, get_block_size_from_fs(fs));
+
+        inode.i_size += get_block_size_from_fs(fs);
+        put_inode(fs, inode, dir);
+        block_munmap(fs, ptr);
+
+        return 0;
+    }
     for (; get_current_block_number(&dg.ig) < get_real_size_in_alloc_blocks(&dg.ig); next_entry(&dg)) {
         if (is_current_entry_addable(&dg, get_real_rec_len(name))) {
-            add_new_entry_to_current_entry(dg.current_block + dg.offset, name, file_type, inode);
-            add_one_hard_link_of_inode(fs, inode);
+            add_new_entry_to_current_entry(dg.current_block + dg.offset, name, file_type, inode_id);
+            add_one_hard_link_of_inode(fs, inode_id);
             dir_gate_destroy(&dg);
             return 0;
         }
@@ -256,10 +275,10 @@ __u32 add_new_entry(struct ext2_file_system *fs, __u32 dir, const char *name, __
     __u32 block = first_free_block(fs, hint);
     block_alloc(fs, block);
     append_block(&dg.ig, block);
-
+    dg.ig.inode->i_size += get_block_size_from_fs(fs);
     next_entry(&dg);
-    enter_new_entry_at_pointer(inode, file_type, name, dg.current_block, get_block_size_from_fs(fs));
-    add_one_hard_link_of_inode(fs, inode);
+    enter_new_entry_at_pointer(inode_id, file_type, name, dg.current_block, get_block_size_from_fs(fs));
+    add_one_hard_link_of_inode(fs, inode_id);
 
     dir_gate_destroy(&dg);
     return 0;
