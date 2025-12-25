@@ -60,3 +60,34 @@ static void create_default_dir(struct ext2_vfs *vfs, __u32 parent_inode, const c
     root_dir.i_links_count--;
     put_inode(vfs->fs, root_dir, parent_inode);
 }
+
+static __u8 dir_entry_name_compare_with(struct ext2_dir_entry *dentry, const char *name) {
+    __u16 search_len = (__u16)strlen(name);
+    if (search_len != dentry->name_len) {
+        return 0;
+    }
+
+    const char *dentry_name = ext2_dir_entry_get_name(dentry);
+
+    return strncmp(name, dentry_name, search_len) == 0;
+}
+
+static find_inode_id_by_name_in_dir(struct ext2_vfs *vfs, const char *name, __u32 dir_id) {
+    struct dir_gate dg;
+    __u32 error;
+    error = dir_gate_init(&dg, vfs->fs, dir_id);
+    if (error == 1) { return 0; }
+
+    struct ext2_dir_entry entry;
+    for (; get_current_block_number(&dg.ig) < get_real_size_in_alloc_blocks(&dg.ig); next_entry(&dg)) {
+        ext2_dir_entry_init(&entry, dg.current_block + dg.offset);
+        if (dir_entry_name_compare_with(&entry, name)) {
+            return entry.inode;
+        }
+    }
+    return 0;
+}
+
+__s32 ext2_vfs_mkdir(struct ext2_vfs *vfs, const char *path) {
+
+}

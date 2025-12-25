@@ -75,11 +75,12 @@ int main() {
     //debug_inode(test_dir);
     //printf("%u\n", test_dir.i_size);
 
-    /*struct ext2_vfs vfs;
+    struct ext2_vfs vfs;
     vfs.fs = &current;
     vfs.user_id = 0;
     vfs.group_id = 0;
-    create_default_dir(&vfs, 2, "test");*/
+    //create_default_dir(&vfs, 2, "test");
+    //printf("%u\n", find_inode_id_by_name_in_dir(&vfs, ".", 13));
 
     
     ext2_file_system_destroy(&current);

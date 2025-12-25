@@ -8,6 +8,7 @@
 #include "fd_table.h"
 
 #include <time.h>
+#include <string.h>
 
 #define DIR_TYPE_DIR 2
 
