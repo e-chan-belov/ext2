@@ -3,11 +3,13 @@
 #include "ext2_fs.h"
 #include "rb_tree.h"
 
-
+struct inode_table_entry {
+    struct inode inode;
+    __u32 links_count;
+};
 
 struct inode_table {
-    struct ext2_file_system fs;
-
+    struct ext2_file_system *fs;
     struct rb_tree table;
 };
 
