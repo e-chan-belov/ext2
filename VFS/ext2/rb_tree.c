@@ -21,6 +21,21 @@ __u32 rb_tree_init(struct rb_tree *tree) {
     return 0;
 }
 
+void rb_tree_node_destroy_recursive(struct rb_node *n) {
+    struct rb_node *l = NULL;
+    struct rb_node *r = NULL;
+    if (n != NULL) { l = n->l; r = n->r; }
+    else { return; }
+    rb_node_and_value_free(n);
+    rb_tree_node_destroy_recursive(l);
+    rb_tree_node_destroy_recursive(r);
+}
+
+__u32 rb_tree_destroy(struct rb_tree *tree) {
+    rb_tree_node_destroy_recursive(tree->root);
+    tree->root = NULL;
+}
+
 struct rb_node* rb_tree_find(struct rb_tree *tree, __u32 key) {
     struct rb_node* p = tree->root;
     while (p != NULL) {

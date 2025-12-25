@@ -21,6 +21,7 @@ struct rb_tree {
 };
 
 __u32 rb_tree_init(struct rb_tree *tree);
+__u32 rb_tree_destroy(struct rb_tree *tree);
 
 struct rb_node* rb_tree_find(struct rb_tree *tree, __u32 key);
 __u32 rb_tree_insert(struct rb_tree *tree, __u32 key, void *value);
