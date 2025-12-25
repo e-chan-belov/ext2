@@ -1,1 +1,62 @@
 #include "ext2_vfs.h"
+
+static __u32 alloc_new_inode(struct ext2_vfs *vfs, __u32 hint) {
+    __u32 inode_id = first_free_inode(vfs->fs, hint);
+    inode_alloc(vfs->fs, inode_id);
+    return inode_id;
+}
+
+static struct inode create_default_file(__u16 user_id, __u16 group_id, __u16 file_type) {
+    struct inode inode;
+
+    __u16 process_bits = 0;
+    __u16 default_permission = EXT2_S_IRUSR | EXT2_S_IWUSR | EXT2_S_IRGRP | EXT2_S_IWGRP | EXT2_S_IROTH;
+    inode.i_mode = file_type | process_bits | default_permission;
+
+    inode.i_uid = user_id;
+    inode.i_gid = group_id;
+
+    __u32 now = (__u32)time(NULL);
+    inode.i_atime = now;
+    inode.i_ctime = now;
+    inode.i_mtime = now;
+    inode.i_dtime = 0;
+
+    inode.i_flags = 0;
+
+    inode.i_size = 0;
+    inode.i_blocks = 0;
+    int i;
+    for (i = 0; i < 15; i++) {
+        inode.i_block[i] = 0;
+    }
+
+    inode.i_links_count = 0;
+
+    inode.i_osd1 = 2;
+
+    inode.i_generation = 3948355924;
+    inode.i_file_acl = 0;
+    inode.i_dir_acl = 0;
+    inode.i_faddr = 0;
+    for (i = 0; i < 12; i++) {
+        inode.i_osd2[i] = 0;
+    }
+
+    return inode;
+}
+
+static void create_default_dir(struct ext2_vfs *vfs, __u32 parent_inode, const char* name) {
+    __u32 inode_id = alloc_new_inode(vfs, parent_inode);
+    struct inode inode = create_default_file(vfs->user_id, vfs->group_id, EXT2_S_IFDIR);
+    put_inode(vfs->fs, inode, inode_id);
+    add_new_entry(vfs->fs, parent_inode, name, DIR_TYPE_DIR, inode_id);
+
+    add_new_entry(vfs->fs, inode_id, ".", DIR_TYPE_DIR, inode_id);
+    add_new_entry(vfs->fs, inode_id, "..", DIR_TYPE_DIR, parent_inode);
+    
+    // this is temporary
+    struct inode root_dir = read_inode(vfs->fs, parent_inode);
+    root_dir.i_links_count--;
+    put_inode(vfs->fs, root_dir, parent_inode);
+}
