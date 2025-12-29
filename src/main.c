@@ -62,6 +62,7 @@ int main() {
     
     next_entry(&dg);
     next_entry(&dg);
+    next_entry(&dg);
 
     cur_dentry = get_current_entry(&dg);
     debug_ext2_dir_entry(&cur_dentry);
@@ -79,9 +80,31 @@ int main() {
     vfs.fs = &current;
     vfs.user_id = 0;
     vfs.group_id = 0;
+    ext2_vfs_mkdir(&vfs, "/", "test2");
+
+    /*struct inode file1 = create_default_file(vfs.user_id, vfs.group_id, EXT2_S_IFREG);
+    struct inode file2 = create_default_file(vfs.user_id, vfs.group_id, EXT2_S_IFREG);
+    struct inode file3 = create_default_file(vfs.user_id, vfs.group_id, EXT2_S_IFREG);
+
+    __u32 inode_id1 = first_free_inode(&current, 12);
+    inode_alloc(vfs.fs, inode_id1);
+    put_inode(vfs.fs, file1, inode_id1);
+
+    __u32 inode_id2 = first_free_inode(&current, 12);
+    inode_alloc(vfs.fs, inode_id2);
+    put_inode(vfs.fs, file2, inode_id2);
+
+    __u32 inode_id3 = first_free_inode(&current, 12);
+    inode_alloc(vfs.fs, inode_id3);
+    put_inode(vfs.fs, file3, inode_id3);
+
+    add_new_entry(vfs.fs, 2, "file1.cpp", 1, inode_id1);
+    add_new_entry(vfs.fs, 2, "file2.cpp", 1, inode_id2);
+    add_new_entry(vfs.fs, 2, "file3.cpp", 1, inode_id3);*/
+
+
     //create_default_dir(&vfs, 2, "test");
     //printf("%u\n", find_inode_id_by_name_in_dir(&vfs, ".", 13));
-
     
     ext2_file_system_destroy(&current);
     return 0;

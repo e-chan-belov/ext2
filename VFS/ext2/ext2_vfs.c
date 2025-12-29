@@ -79,7 +79,8 @@ static find_inode_id_by_name_in_dir(struct ext2_vfs *vfs, const char *name, __u3
     if (error == 1) { return 0; }
 
     struct ext2_dir_entry entry;
-    for (; get_current_block_number(&dg.ig) < get_real_size_in_alloc_blocks(&dg.ig); next_entry(&dg)) {
+    int dir_gate_error = 0;
+    for (; dir_gate_error != 1; dir_gate_error = next_entry(&dg)) {
         ext2_dir_entry_init(&entry, dg.current_block + dg.offset);
         if (dir_entry_name_compare_with(&entry, name)) {
             return entry.inode;
@@ -88,6 +89,33 @@ static find_inode_id_by_name_in_dir(struct ext2_vfs *vfs, const char *name, __u3
     return 0;
 }
 
-__s32 ext2_vfs_mkdir(struct ext2_vfs *vfs, const char *path) {
+static __u32 find_inode_id_by_path(struct ext2_vfs *vfs, const char *path) {
+    char *path_copy = strdup(path);
 
+    __u32 parent_inode = ROOT_DIR_INODE_ID;
+    __u32 temp = 0;
+    char *token = strtok(path_copy, "/");
+    while (token != NULL) {
+        temp = find_inode_id_by_name_in_dir(vfs, token, parent_inode);
+        if (temp == 0) { 
+            free(path_copy);
+            return 0; 
+        }
+        //printf("parent inode %u has %u\n", parent_inode, temp);
+        parent_inode = temp;
+        token = strtok(NULL, "/");
+    }
+
+    free(path_copy);
+    return parent_inode;
+}
+
+__s32 ext2_vfs_mkdir(struct ext2_vfs *vfs, const char *path, const char *name) {
+    __u32 dir_id = find_inode_id_by_path(vfs, path);
+    if (dir_id == 0) { return 1; }
+
+    __u32 already_exist_id = find_inode_id_by_name_in_dir(vfs, name, dir_id);
+    if (already_exist_id != 0) { return 2; }
+
+    create_default_dir(vfs, dir_id, name);
 }

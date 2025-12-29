@@ -9,6 +9,10 @@
 
 #include <time.h>
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#define ROOT_DIR_INODE_ID 2
 
 #define DIR_TYPE_DIR 2
 
@@ -28,7 +32,7 @@ __u32 ext2_vfs_mount(struct ext2_vfs *vfs, const char *path, __u16 user_id, __u1
 __u32 ext2_vfs_umount(struct ext2_vfs *vfs);
 
 __s32 ext2_vfs_list(struct ext2_vfs *vfs, const char *path, void *buf);
-__s32 ext2_vfs_mkdir(struct ext2_vfs *vfs, const char *path);
+__s32 ext2_vfs_mkdir(struct ext2_vfs *vfs, const char *path, const char *name);
 // directories must by empty to be deleted
 __s32 ext2_vfs_unlink(struct ext2_vfs *vfs, const char *path);
 
