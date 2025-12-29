@@ -263,7 +263,8 @@ __u32 add_new_entry(struct ext2_file_system *fs, __u32 dir, const char *name, __
 
         return 0;
     }
-    for (; get_current_block_number(&dg.ig) < get_real_size_in_alloc_blocks(&dg.ig); next_entry(&dg)) {
+    int dir_gate_error = 0;
+    for (; dir_gate_error != 1; dir_gate_error = next_entry(&dg)) {
         if (is_current_entry_addable(&dg, get_real_rec_len(name))) {
             add_new_entry_to_current_entry(dg.current_block + dg.offset, name, file_type, inode_id);
             add_one_hard_link_of_inode(fs, inode_id);
