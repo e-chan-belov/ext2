@@ -32,6 +32,9 @@ static __u32 free_inode_gate_and_cache_at_dir(struct dir_gate *dg) {
 }
 
 __u32 dir_gate_init(struct dir_gate *dg, struct ext2_file_system *fs, __u32 inode) {
+    struct inode dir = read_inode(fs, inode);
+    if (!IS_DIR(dir.i_mode)) { return 2; }
+
     alloc_new_inode_gate_at_dir(dg, fs, inode);
     if (get_real_size_in_alloc_blocks(&(dg->ig)) == 0) {
         free_inode_gate_and_cache_at_dir(dg);
