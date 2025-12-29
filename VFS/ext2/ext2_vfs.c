@@ -157,3 +157,20 @@ __s32 ext2_vfs_touch(struct ext2_vfs *vfs, __u32 option, const char *path, const
     put_inode(vfs->fs, file, file_id);
     return 0;
 }
+
+__s32 ext2_vfs_list(struct ext2_vfs *vfs, const char *path) {
+    __u32 dir_id = find_inode_id_by_path(vfs, path);
+    if (dir_id == 0) { return -1; }
+
+    struct dir_gate dg;
+    __u32 dir_gate_error = dir_gate_init(&dg, vfs->fs, dir_id);
+    if (dir_gate_error != 0) { return -2; }
+
+    dir_gate_error = 0;
+    struct ext2_dir_entry entry;
+    for (; dir_gate_error != 1; dir_gate_error = next_entry(&dg)) {
+        entry = get_current_entry(&dg);
+        printf("%s ", ext2_dir_entry_get_name(&entry));
+    }
+    printf("\n");
+}
