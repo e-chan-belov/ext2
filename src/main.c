@@ -82,6 +82,8 @@ int main() {
     vfs.group_id = 0;
     ext2_vfs_touch(&vfs, 0, "/", "file1.cpp");
     ext2_vfs_list(&vfs, "/");
+    ext2_vfs_unlink(&vfs, "/", "file2.cpp");
+    printf("%d\n", is_inode_used(&current, 15));
 
     /*struct inode file1 = create_default_file(vfs.user_id, vfs.group_id, EXT2_S_IFREG);
     struct inode file2 = create_default_file(vfs.user_id, vfs.group_id, EXT2_S_IFREG);

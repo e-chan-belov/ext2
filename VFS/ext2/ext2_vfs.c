@@ -133,7 +133,7 @@ __s32 ext2_vfs_touch(struct ext2_vfs *vfs, __u32 option, const char *path, const
     if (file_id == 0 && option != 2) {
         struct inode file = create_default_file(vfs->user_id, vfs->group_id, EXT2_S_IFREG);
 
-        file_id = first_free_inode(vfs->fs, 12);
+        file_id = first_free_inode(vfs->fs, ROOT_DIR_INODE_ID);
         inode_alloc(vfs->fs, file_id);
         put_inode(vfs->fs, file, file_id);
 
@@ -173,4 +173,30 @@ __s32 ext2_vfs_list(struct ext2_vfs *vfs, const char *path) {
         printf("%s ", ext2_dir_entry_get_name(&entry));
     }
     printf("\n");
+
+    dir_gate_destroy(&dg);
+    return 0;
+}
+
+__s32 ext2_vfs_unlink(struct ext2_vfs *vfs, const char *path, const char *name) {
+    __u32 dir_id = find_inode_id_by_path(vfs, path);
+    if (dir_id == 0) { return -1; }
+
+    struct dir_gate dg;
+    __u32 dir_gate_error = dir_gate_init(&dg, vfs->fs, dir_id);
+    if (dir_gate_error != 0) { return -2; }
+
+    dir_gate_error = 0;
+    struct ext2_dir_entry entry;
+    for (; dir_gate_error != 1; dir_gate_error = next_entry(&dg)) {
+        entry = get_current_entry(&dg);
+        if (dir_entry_name_compare_with(&entry, name)) {
+            delete_current_entry(&dg);
+            dir_gate_destroy(&dg);
+            return 0;
+        }
+    }
+
+    dir_gate_destroy(&dg);
+    return -3;
 }
