@@ -80,7 +80,7 @@ int main() {
     vfs.fs = &current;
     vfs.user_id = 0;
     vfs.group_id = 0;
-    ext2_vfs_mkdir(&vfs, "/", "test2");
+    ext2_vfs_touch(&vfs, 0, "/", "file1.cpp");
 
     /*struct inode file1 = create_default_file(vfs.user_id, vfs.group_id, EXT2_S_IFREG);
     struct inode file2 = create_default_file(vfs.user_id, vfs.group_id, EXT2_S_IFREG);

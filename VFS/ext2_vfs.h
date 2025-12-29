@@ -14,6 +14,7 @@
 
 #define ROOT_DIR_INODE_ID 2
 
+#define DIR_TYPE_FILE 1
 #define DIR_TYPE_DIR 2
 
 struct ext2_vfs {
@@ -38,7 +39,7 @@ __s32 ext2_vfs_unlink(struct ext2_vfs *vfs, const char *path);
 
 __u32 ext2_vfs_ln(struct ext2_vfs *vfs, __u32 option, const char *original_path, const char *path_to_target);
 
-__s32 ext2_vfs_touch(struct ext2_vfs *vfs, __u32 option, const char *path);
+__s32 ext2_vfs_touch(struct ext2_vfs *vfs, __u32 option, const char *path, const char *name);
 // __s32 ext2_vfs_chmod();
 
 __s32 ext2_vfs_open(struct ext2_vfs *vfs, const char *path, int flags);

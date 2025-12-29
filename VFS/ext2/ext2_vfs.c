@@ -1,5 +1,9 @@
 #include "ext2_vfs.h"
 
+static __u32 get_current_posix_time() {
+    return (__u32)time(NULL);
+}
+
 static __u32 alloc_new_inode(struct ext2_vfs *vfs, __u32 hint) {
     __u32 inode_id = first_free_inode(vfs->fs, hint);
     inode_alloc(vfs->fs, inode_id);
@@ -16,7 +20,7 @@ static struct inode create_default_file(__u16 user_id, __u16 group_id, __u16 fil
     inode.i_uid = user_id;
     inode.i_gid = group_id;
 
-    __u32 now = (__u32)time(NULL);
+    __u32 now = get_current_posix_time();
     inode.i_atime = now;
     inode.i_ctime = now;
     inode.i_mtime = now;
@@ -112,10 +116,44 @@ static __u32 find_inode_id_by_path(struct ext2_vfs *vfs, const char *path) {
 
 __s32 ext2_vfs_mkdir(struct ext2_vfs *vfs, const char *path, const char *name) {
     __u32 dir_id = find_inode_id_by_path(vfs, path);
-    if (dir_id == 0) { return 1; }
+    if (dir_id == 0) { return -1; }
 
     __u32 already_exist_id = find_inode_id_by_name_in_dir(vfs, name, dir_id);
-    if (already_exist_id != 0) { return 2; }
+    if (already_exist_id != 0) { return -2; }
 
     create_default_dir(vfs, dir_id, name);
+    return 0;
+}
+
+__s32 ext2_vfs_touch(struct ext2_vfs *vfs, __u32 option, const char *path, const char *name) {
+    __u32 dir_id = find_inode_id_by_path(vfs, path);
+    if (dir_id == 0) { return -1; }
+
+    __u32 file_id = find_inode_id_by_name_in_dir(vfs, name, dir_id);
+    if (file_id == 0 && option != 2) {
+        struct inode file = create_default_file(vfs->user_id, vfs->group_id, EXT2_S_IFREG);
+
+        file_id = first_free_inode(vfs->fs, 12);
+        inode_alloc(vfs->fs, file_id);
+        put_inode(vfs->fs, file, file_id);
+
+        add_new_entry(vfs->fs, dir_id, name, DIR_TYPE_FILE, file_id);
+        return 0;
+    }
+    struct inode file = read_inode(vfs->fs, file_id);
+
+    __u32 current_time = get_current_posix_time();
+
+    switch (option)
+    {
+    case 0:
+        file.i_atime = current_time;
+        file.i_mtime = current_time;
+        break;
+    
+    case 1:
+        break;
+    }
+    put_inode(vfs->fs, file, file_id);
+    return 0;
 }
