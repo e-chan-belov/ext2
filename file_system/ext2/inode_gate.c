@@ -56,7 +56,7 @@ __u32 prev_block(struct inode_gate *ig) {
 }
 __u32 move_by_offset(struct inode_gate *ig, __s32 offset) {
     if (does_lc_fit_in_file(ig, ig->lc + offset)) {
-        ig->lc++;
+        ig->lc += offset;
         return 0;
     }
     return 1;
