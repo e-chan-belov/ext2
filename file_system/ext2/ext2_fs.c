@@ -259,12 +259,22 @@ __u32 first_free_block(struct ext2_file_system *fs, __u32 hint) {
             return id;
         }
     }
+    for (id = 0; id < hint; id++) {
+        if(!is_block_used(fs, id)) {
+            return id;
+        }
+    }
     return 0;
 }
 
 __u32 first_free_inode(struct ext2_file_system *fs, __u32 hint) {
     __u32 id;
     for (id = hint; id < fs->sb.s_inodes_count; id++) {
+        if (!is_inode_used(fs, id)) {
+            return id;
+        }
+    }
+    for (id = 1; id < hint; id++) {
         if (!is_inode_used(fs, id)) {
             return id;
         }
