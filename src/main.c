@@ -16,7 +16,7 @@ struct inode global;
 
 int main() {
     struct ext2_file_system current;
-    #ifdef __unix_
+    #ifdef __unix__
         int err = ext2_file_system_init(&current, "/workspaces/ext2_test_first/disk.img");
     #elif defined _WIN32
         int err = ext2_file_system_init(&current, "C:\\Users\\egorb\\Documents\\ext2\\disk.img");   
@@ -86,7 +86,7 @@ int main() {
     vfs.user_id = 0;
     vfs.group_id = 0;
     ext2_vfs_touch(&vfs, 0, "/", "windows_test.cpp");
-    ext2_vfs_unlink(&vfs, "/", "windows.cpp");
+    //ext2_vfs_unlink(&vfs, "/", "windows.cpp");
     ext2_vfs_list(&vfs, "/");
     //ext2_vfs_unlink(&vfs, "/", "file2.cpp");
     printf("%d\n", is_inode_used(&current, 15));

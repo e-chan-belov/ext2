@@ -190,7 +190,7 @@ __u32 delete_current_entry(struct dir_gate *dg) { // todo: add recursive entry d
         dg->offset -= dir_link_get_value(&dg->dl);
         dir_link_remove_value(&dg->dl);
         
-        char *dentry = (struct ext2_dir_entry*)(dg->current_block + dg->offset);
+        char *dentry = (dg->current_block + dg->offset);
         *(__u16*)(dentry + sizeof(__u32)) = cur_len + *(__u16*)(dentry + sizeof(__u32));
     }
     return 0;

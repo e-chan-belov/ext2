@@ -5,7 +5,7 @@ __u32 ext2_file_system_create(const char *file) {
 }
 
 __u32 ext2_file_system_init(struct ext2_file_system *fs, const char *file) {
-    #ifdef __unix_
+    #ifdef __unix__
         __u32 fd = open(file, O_RDWR);
 
         __u32 err;
@@ -121,7 +121,7 @@ static void save_super_block_and_bgdt_at_powers_of(struct ext2_file_system *fs, 
     void *ptr;
     __u32 size_in_bytes = get_block_size_from_fs(fs) + fs->groups_count * sizeof(struct block_group_descriptor);
     for (i = power; i < fs->groups_count; i *= power) {
-        #ifdef __unix_
+        #ifdef __unix__
             ptr = mmap(NULL, size_in_bytes, PROT_WRITE | PROT_READ, MAP_SHARED, fs->fd, bytes_in_group * i);
             save_super_block_and_bgdt_at_address(fs, ptr, i);
             munmap(ptr, size_in_bytes);
@@ -141,7 +141,7 @@ static void save_super_block_and_bgdt_at_chosen_groups(struct ext2_file_system *
     __u32 bytes_in_group = get_block_size_from_fs(fs) * fs->sb.s_blocks_per_group;
     __u32 size_in_bytes = get_block_size_from_fs(fs) + fs->groups_count * sizeof(struct block_group_descriptor);
     if (fs->groups_count > 0) {
-        #ifdef __unix_
+        #ifdef __unix__
             ptr = mmap(NULL, 2048, PROT_READ | PROT_WRITE, MAP_SHARED, fs->fd, 0);
             *(struct super_block*)ptr = fs->sb;
             munmap(ptr, 2048);
@@ -174,7 +174,7 @@ static void save_super_block_and_bgdt_at_chosen_groups(struct ext2_file_system *
         #endif
     }
     if (fs->groups_count > 1) {
-        #ifdef __unix_
+        #ifdef __unix__
             ptr = mmap(NULL, size_in_bytes, PROT_READ | PROT_WRITE, MAP_SHARED, fs->fd, bytes_in_group);
             save_super_block_and_bgdt_at_address(fs, ptr, 1);
             munmap(ptr, size_in_bytes);
@@ -197,7 +197,7 @@ __u32 ext2_file_system_destroy(struct ext2_file_system *fs) {
     if (fs->last_block_bitmap != 0) { block_munmap(fs, fs->last_block_bitmap); }
     if (fs->last_inode_bitmap != 0) { block_munmap(fs, fs->last_inode_bitmap); }
     free(fs->bgdt);
-    #ifdef __unix_
+    #ifdef __unix__
         close(fs->fd);
     #elif defined _WIN32
         CloseHandle(fs->mapping);
@@ -232,7 +232,7 @@ __u32 set_bgd(struct ext2_file_system *fs, struct block_group_descriptor bgd,__u
 // it doesn't fail for 4K block size
 void* block_mmap(struct ext2_file_system *fs, __u32 id) {
     void *ptr = NULL;
-    #ifdef __unix_
+    #ifdef __unix__
         ptr = mmap(NULL, fs->block_size, PROT_READ | PROT_WRITE, MAP_SHARED, fs->fd, fs->block_size * id);
         if (ptr == MAP_FAILED) {
             printf("BLOCK_MMAP FAILURE!!! BLOCK ID: %u AND BLOCK SIZE: %u", id, fs->block_size);
@@ -249,7 +249,7 @@ void* block_mmap(struct ext2_file_system *fs, __u32 id) {
 }
 
 __u32 block_munmap(struct ext2_file_system *fs, void *ptr) {
-    #ifdef __unix_
+    #ifdef __unix__
         return munmap(ptr, fs->block_size);
     #elif defined _WIN32
         return UnmapViewOfFile(ptr);

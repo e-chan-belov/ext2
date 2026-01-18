@@ -12,7 +12,7 @@ struct ext2_dir_entry {
 	__u8	name[256];			// File name, up to EXT2_NAME_LEN
 };
 
-__u32 ext2_dir_entry_init(struct ext2_dir_entry *dentry, void* ptr);
+__u32 ext2_dir_entry_init(struct ext2_dir_entry *dentry, char* ptr);
 const char* ext2_dir_entry_get_name(struct ext2_dir_entry *dentry);
 
 struct dir_gate {

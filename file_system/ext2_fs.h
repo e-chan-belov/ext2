@@ -16,7 +16,7 @@
 #include "inode.h"
 
 struct ext2_file_system {
-    #ifdef __unix_
+    #ifdef __unix__
         __u32 fd;
     #elif defined _WIN32
         HANDLE file;
