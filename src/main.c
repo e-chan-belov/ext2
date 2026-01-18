@@ -16,7 +16,12 @@ struct inode global;
 
 int main() {
     struct ext2_file_system current;
-    int err = ext2_file_system_init(&current, "/workspaces/ext2_test_first/disk.img");
+    #ifdef __unix_
+        int err = ext2_file_system_init(&current, "/workspaces/ext2_test_first/disk.img");
+    #elif defined _WIN32
+        int err = ext2_file_system_init(&current, "C:\\Users\\egorb\\Documents\\ext2\\disk.img");   
+    #endif
+    
     if (err < 0) { 
         printf("%d\n", err);
         return err; 
@@ -80,9 +85,10 @@ int main() {
     vfs.fs = &current;
     vfs.user_id = 0;
     vfs.group_id = 0;
-    ext2_vfs_touch(&vfs, 0, "/", "file1.cpp");
+    ext2_vfs_touch(&vfs, 0, "/", "windows_test.cpp");
+    ext2_vfs_unlink(&vfs, "/", "windows.cpp");
     ext2_vfs_list(&vfs, "/");
-    ext2_vfs_unlink(&vfs, "/", "file2.cpp");
+    //ext2_vfs_unlink(&vfs, "/", "file2.cpp");
     printf("%d\n", is_inode_used(&current, 15));
 
     /*struct inode file1 = create_default_file(vfs.user_id, vfs.group_id, EXT2_S_IFREG);

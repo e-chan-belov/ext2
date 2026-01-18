@@ -2,8 +2,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/mman.h>
-#include <fcntl.h>
+
+#ifdef __unix__ 
+    #include <sys/mman.h>
+    #include <fcntl.h>
+#elif defined _WIN32
+    #include <windows.h>
+#endif
 
 #include "types.h"
 #include "super_block.h"
@@ -11,7 +16,12 @@
 #include "inode.h"
 
 struct ext2_file_system {
-    __u32 fd;
+    #ifdef __unix_
+        __u32 fd;
+    #elif defined _WIN32
+        HANDLE file;
+        HANDLE mapping;
+    #endif
 
     struct super_block sb;
     struct block_group_descriptor* bgdt;
@@ -21,9 +31,9 @@ struct ext2_file_system {
 
     /* cache section */
     __u32 block_bitmap_id;
-    void *last_block_bitmap;
+    char *last_block_bitmap;
     __u32 inode_bitmap_id;
-    void *last_inode_bitmap;
+    char *last_inode_bitmap;
 };
 
 __u32 ext2_file_system_create(const char *file);

@@ -1,5 +1,9 @@
 #pragma once
-#include <sys/mman.h>
+#ifdef __unix__         
+    #include <sys/mman.h>
+#elif defined _WIN32
+    #include <windows.h>
+#endif
 
 #include "super_block.h"
 #include "bgdt.h"
@@ -169,13 +173,13 @@ void debug_inode_gate(__u32 id, struct ext2_file_system *fs) {
 }
 
 void* debug_via_mmap(int fd, __u32 size, __u32 offset) {
-    void* ptr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, offset);
-    if (ptr == MAP_FAILED) { printf("debug_via_mmap FAILURE at %u size and %u offset!!!\n", size, offset); }
-    return ptr;
+    //void* ptr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, offset);
+    //if (ptr == MAP_FAILED) { printf("debug_via_mmap FAILURE at %u size and %u offset!!!\n", size, offset); }
+    return NULL;
 }
 
 int free_debug_via_mmap(void* ptr, __u32 size) {
-    int err = munmap(ptr, size);
-    if (err < 0) { printf("free_debug_via_mmap FAILURE with %u code at %u\n", err, size); return err; }
+    //int err = munmap(ptr, size);
+    //if (err < 0) { printf("free_debug_via_mmap FAILURE with %u code at %u\n", err, size); return err; }
     return 0;
 }

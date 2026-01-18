@@ -1,6 +1,6 @@
 #include "dir_gate.h"
 
-__u32 ext2_dir_entry_init(struct ext2_dir_entry *dentry, void* ptr) {
+__u32 ext2_dir_entry_init(struct ext2_dir_entry *dentry, char* ptr) {
     dentry->inode = ((struct ext2_dir_entry*)ptr)->inode;
     dentry->rec_len = ((struct ext2_dir_entry*)ptr)->rec_len;
     dentry->name_len = ((struct ext2_dir_entry*)ptr)->name_len;
@@ -190,7 +190,7 @@ __u32 delete_current_entry(struct dir_gate *dg) { // todo: add recursive entry d
         dg->offset -= dir_link_get_value(&dg->dl);
         dir_link_remove_value(&dg->dl);
         
-        void *dentry = (struct ext2_dir_entry*)(dg->current_block + dg->offset);
+        char *dentry = (struct ext2_dir_entry*)(dg->current_block + dg->offset);
         *(__u16*)(dentry + sizeof(__u32)) = cur_len + *(__u16*)(dentry + sizeof(__u32));
     }
     return 0;
@@ -215,7 +215,7 @@ static __u8 is_current_entry_addable(struct dir_gate *dg, __u32 rec_len) {
     return dentry.rec_len >= get_real_rec_len_with_len(dentry.name_len) + rec_len;
 }
 
-static void enter_new_entry_at_pointer(__u32 inode, __u8 file_type, const char *name, void *new_entry_ptr, __s32 rest) {
+static void enter_new_entry_at_pointer(__u32 inode, __u8 file_type, const char *name, char *new_entry_ptr, __s32 rest) {
     *(__u32*)(new_entry_ptr) = inode;
     *(__u16*)(new_entry_ptr + sizeof(__u32)) = rest;
     *(__u8*)(new_entry_ptr + sizeof(__u32) + sizeof(__u16) + sizeof(__u8)) = file_type;
@@ -231,10 +231,10 @@ static void enter_new_entry_at_pointer(__u32 inode, __u8 file_type, const char *
     }
 }
 
-static __u32 add_new_entry_to_current_entry(void* ptr, const char *name, __u8 file_type, __u32 inode) {
+static __u32 add_new_entry_to_current_entry(char* ptr, const char *name, __u8 file_type, __u32 inode) {
     __u32 old_rest = ((struct ext2_dir_entry*)(ptr))->rec_len - get_real_rec_len_with_len(((struct ext2_dir_entry*)(ptr))->name_len);
     ((struct ext2_dir_entry*)(ptr))->rec_len -= old_rest;
-    void *new_entry_ptr = ptr + ((struct ext2_dir_entry*)ptr)->rec_len;
+    char *new_entry_ptr = ptr + ((struct ext2_dir_entry*)ptr)->rec_len;
     enter_new_entry_at_pointer(inode, file_type, name, new_entry_ptr, old_rest);
 }
 
@@ -256,7 +256,7 @@ __u32 add_new_entry(struct ext2_file_system *fs, __u32 dir, const char *name, __
         block_alloc(fs, block_id);
         append_block(&ig, block_id);
 
-        void* ptr = block_mmap(fs, block_id);
+        char* ptr = block_mmap(fs, block_id);
 
         enter_new_entry_at_pointer(dir, file_type, name, ptr, get_block_size_from_fs(fs));
 

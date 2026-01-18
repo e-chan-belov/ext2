@@ -21,7 +21,7 @@ struct dir_gate {
 
 	struct dir_link dl;
     __u32 offset;
-    void *current_block;
+    char *current_block;
 };
 
 __u32 dir_gate_init(struct dir_gate *dg, struct ext2_file_system *fs, __u32 inode);
