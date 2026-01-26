@@ -85,8 +85,8 @@ int main() {
     vfs.fs = &current;
     vfs.user_id = 0;
     vfs.group_id = 0;
-    ext2_vfs_touch(&vfs, 0, "/", "windows_test.cpp");
-    //ext2_vfs_unlink(&vfs, "/", "windows.cpp");
+    ext2_vfs_touch(&vfs, 0, "/", "windows_test2.cpp");
+    ext2_vfs_unlink(&vfs, "/", "file3.cpp");
     ext2_vfs_list(&vfs, "/");
     //ext2_vfs_unlink(&vfs, "/", "file2.cpp");
     printf("%d\n", is_inode_used(&current, 15));

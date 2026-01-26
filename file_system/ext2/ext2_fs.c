@@ -59,9 +59,7 @@ __u32 ext2_file_system_init(struct ext2_file_system *fs, const char *file) {
             0, 0,
             NULL);
 
-        SYSTEM_INFO si;
-        GetSystemInfo(&si);
-        SIZE_T gran = si.dwAllocationGranularity;
+
             
         void *ptr = MapViewOfFile(fs->mapping,
             FILE_MAP_READ | FILE_MAP_WRITE,
@@ -89,7 +87,7 @@ __u32 ext2_file_system_init(struct ext2_file_system *fs, const char *file) {
             return -4;
         }
 
-        struct block_group_descriptor *tmp_ptr = (char*)ptr + (1 + fs->sb.s_first_data_block) * fs->block_size;
+        struct block_group_descriptor *tmp_ptr = (struct block_group_descriptor*)((char*)ptr + (1 + fs->sb.s_first_data_block) * fs->block_size);
         __u32 i;
         for (i = 0; i < fs->groups_count; i++, tmp_ptr++) {
             fs->bgdt[i] = *tmp_ptr;
@@ -108,7 +106,7 @@ __u32 ext2_file_system_init(struct ext2_file_system *fs, const char *file) {
 static void save_super_block_and_bgdt_at_address(struct ext2_file_system *fs, void *ptr, __u16 id) {
     *(struct super_block*)ptr = fs->sb;
     ((struct super_block*)ptr)->s_block_group_nr = id;
-    struct block_group_descriptor *bgdt_ptr = ((char*)ptr + get_block_size_from_fs(fs));
+    struct block_group_descriptor *bgdt_ptr = (struct block_group_descriptor*)((char*)ptr + get_block_size_from_fs(fs));
     int i;
     for (i = 0; i < fs->groups_count; i++) {
         bgdt_ptr[i] = fs->bgdt[i];
@@ -126,11 +124,20 @@ static void save_super_block_and_bgdt_at_powers_of(struct ext2_file_system *fs, 
             save_super_block_and_bgdt_at_address(fs, ptr, i);
             munmap(ptr, size_in_bytes);
         #elif defined _WIN32
+            // The offset must be a multiple of the VirtualAlloc allocation granularity.
+            SYSTEM_INFO si;
+            GetSystemInfo(&si);
+            SIZE_T gran = si.dwAllocationGranularity;
+
+            size_t real_offset = bytes_in_group * i;
+
+            size_t offset_in_gran = (real_offset / gran) * gran;
+            size_t gran_garbage = real_offset - offset_in_gran;
             ptr = MapViewOfFile(fs->mapping,
                 FILE_MAP_READ | FILE_MAP_WRITE,
-                0, 0,
-                bytes_in_group * i + size_in_bytes);
-            save_super_block_and_bgdt_at_address(fs, (char*)ptr + bytes_in_group * i, i);
+                0, offset_in_gran,
+                gran_garbage + size_in_bytes);
+            save_super_block_and_bgdt_at_address(fs, (char*)ptr + gran_garbage, i);
             UnmapViewOfFile(ptr);
         #endif
     }
@@ -166,7 +173,7 @@ static void save_super_block_and_bgdt_at_chosen_groups(struct ext2_file_system *
                 0, 0,
                 (1 + fs->sb.s_first_data_block) * fs->block_size + bytes_in_group);
             __u32 i;
-            struct block_group_descriptor *tmp_ptr = (char*)ptr + (1 + fs->sb.s_first_data_block) * fs->block_size;
+            struct block_group_descriptor *tmp_ptr = (struct block_group_descriptor*)((char*)ptr + (1 + fs->sb.s_first_data_block) * fs->block_size);
             for (i = 0; i < fs->groups_count; i++) {
                 tmp_ptr[i] = fs->bgdt[i];
             }
@@ -179,11 +186,19 @@ static void save_super_block_and_bgdt_at_chosen_groups(struct ext2_file_system *
             save_super_block_and_bgdt_at_address(fs, ptr, 1);
             munmap(ptr, size_in_bytes);
         #elif defined _WIN32
+            SYSTEM_INFO si;
+            GetSystemInfo(&si);
+            SIZE_T gran = si.dwAllocationGranularity;
+
+            size_t real_offset = bytes_in_group;
+
+            size_t offset_in_gran = (real_offset / gran) * gran;
+            size_t gran_garbage = real_offset - offset_in_gran;
             ptr = MapViewOfFile(fs->mapping,
                 FILE_MAP_READ | FILE_MAP_WRITE,
-                0, 0,
-                bytes_in_group + size_in_bytes);
-            save_super_block_and_bgdt_at_address(fs, (char*)ptr + bytes_in_group, 1);
+                0, offset_in_gran,
+                gran_garbage + size_in_bytes);
+            save_super_block_and_bgdt_at_address(fs, (char*)ptr + gran_garbage, 1);
             UnmapViewOfFile(ptr);
         #endif
     }
@@ -226,6 +241,7 @@ struct block_group_descriptor get_bgd(struct ext2_file_system *fs, __u32 index) 
 }
 __u32 set_bgd(struct ext2_file_system *fs, struct block_group_descriptor bgd,__u32 index) {
     fs->bgdt[index] = bgd;
+    return 0;
 }
 
 // please be aware that it can fail because of a page size
@@ -239,11 +255,19 @@ void* block_mmap(struct ext2_file_system *fs, __u32 id) {
             return NULL;
         }
     #elif defined _WIN32
+        SYSTEM_INFO si;
+        GetSystemInfo(&si);
+        SIZE_T gran = si.dwAllocationGranularity;
+
+        size_t real_offset = fs->block_size * id;
+
+        size_t offset_in_gran = (real_offset / gran) * gran;
+        size_t gran_garbage = real_offset - offset_in_gran;
         ptr = MapViewOfFile(fs->mapping,
             FILE_MAP_READ | FILE_MAP_WRITE,
-            0, 0,
-            fs->block_size * id + fs->block_size);
-        ptr = (char*)ptr + fs->block_size * id;
+            0, offset_in_gran,
+            gran_garbage + fs->block_size);
+        ptr = (char*)ptr + gran_garbage;
     #endif
     return ptr;
 }
@@ -252,7 +276,15 @@ __u32 block_munmap(struct ext2_file_system *fs, void *ptr) {
     #ifdef __unix__
         return munmap(ptr, fs->block_size);
     #elif defined _WIN32
-        return UnmapViewOfFile(ptr);
+    // This value must be identical to the value returned by a previous call to one of the functions in the MapViewOfFile family
+    // therefore the pointer value which was created after block_mmap call must be found
+    // this value can be found with calcutaling the multiple of granularity of pointer
+        SYSTEM_INFO si;
+        GetSystemInfo(&si);
+        SIZE_T gran = si.dwAllocationGranularity;
+        size_t pointer_value = (char*)ptr - (char*)NULL;
+        size_t garbage = pointer_value - (pointer_value / gran) * gran;
+        return UnmapViewOfFile((void*)((char*)ptr - garbage));
     #endif
 }
 
