@@ -173,13 +173,18 @@ void debug_inode_gate(__u32 id, struct ext2_file_system *fs) {
 }
 
 void* debug_via_mmap(int fd, __u32 size, __u32 offset) {
-    //void* ptr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, offset);
-    //if (ptr == MAP_FAILED) { printf("debug_via_mmap FAILURE at %u size and %u offset!!!\n", size, offset); }
+    #ifdef __unix__
+        void* ptr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, offset);
+        if (ptr == MAP_FAILED) { printf("debug_via_mmap FAILURE at %u size and %u offset!!!\n", size, offset); }
+        return ptr;
+    #endif
     return NULL;
 }
 
 int free_debug_via_mmap(void* ptr, __u32 size) {
-    //int err = munmap(ptr, size);
-    //if (err < 0) { printf("free_debug_via_mmap FAILURE with %u code at %u\n", err, size); return err; }
+    #ifdef __unix__
+        int err = munmap(ptr, size);
+        if (err < 0) { printf("free_debug_via_mmap FAILURE with %u code at %u\n", err, size); return err; }
+    #endif
     return 0;
 }
