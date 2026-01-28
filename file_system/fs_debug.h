@@ -145,6 +145,15 @@ void debug_inode(struct inode node) {
     printf("\n");
 }
 
+void debug_symlink(struct ext2_file_system *fs, struct inode node) {
+    char *ptr = (char*)node.i_block;
+    while (*ptr != 0 && ptr != (char*)&node.i_generation) {
+        printf("%c", *ptr);
+        ptr++;
+    }
+    printf("\n");
+}
+
 void debug_ext2_dir_entry(struct ext2_dir_entry* entry) {
     printf("inode: %u\n", entry->inode);
     printf("rec_len: %u\n", entry->rec_len);

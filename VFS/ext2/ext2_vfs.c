@@ -93,6 +93,32 @@ static find_inode_id_by_name_in_dir(struct ext2_vfs *vfs, const char *name, __u3
     return 0;
 }
 
+const char* get_symlink_path(struct ext2_vfs *vfs, __u32 id) {
+    struct inode symlink_inode = read_inode(vfs->fs, id);
+    char *str = malloc(symlink_inode.i_size * sizeof(char));
+    int i = 0;
+    if (symlink_inode.i_size < 60) {
+        char *ptr = (char*)symlink_inode.i_block;
+        for (; i < symlink_inode.i_size; i++, ptr++) {
+            str[i] = *ptr;
+        }
+        str[i] = 0;
+    } else {
+        struct inode_gate ig;
+        inode_gate_init(&ig, vfs->fs, &symlink_inode);
+
+        char *ptr = (char*)block_mmap(vfs->fs, get_current_block_id(&ig));
+        for (; i < symlink_inode.i_size; i++, ptr++) {
+            str[i] = *ptr;
+        }
+        str[i] = 0;
+
+        inode_gate_destroy(&ig);
+    }
+    return str;
+}
+
+// todo: add symlink support
 static __u32 find_inode_id_by_path(struct ext2_vfs *vfs, const char *path) {
     char *path_copy = strdup(path);
 
@@ -100,12 +126,29 @@ static __u32 find_inode_id_by_path(struct ext2_vfs *vfs, const char *path) {
     __u32 temp = 0;
     char *token = strtok(path_copy, "/");
     while (token != NULL) {
-        temp = find_inode_id_by_name_in_dir(vfs, token, parent_inode);
-        if (temp == 0) { 
+        struct inode cur_inode = read_inode(vfs->fs, parent_inode);
+        if (IS_LNK(cur_inode.i_mode)) {
+            const char *sym_path = get_symlink_path(vfs, parent_inode);
+            temp = find_inode_id_by_path(vfs, sym_path);
+            if (temp == 0) { 
+                free(sym_path);
+                free(path_copy);
+                return 0; 
+            }
+            free(sym_path);
+        }
+        else if (IS_DIR(cur_inode.i_mode)) {
+            temp = find_inode_id_by_name_in_dir(vfs, token, parent_inode);
+            if (temp == 0) { 
+                free(path_copy);
+                return 0; 
+            }
+        }
+        else {
             free(path_copy);
             return 0; 
         }
-        //printf("parent inode %u has %u\n", parent_inode, temp);
+
         parent_inode = temp;
         token = strtok(NULL, "/");
     }

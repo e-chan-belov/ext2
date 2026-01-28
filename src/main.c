@@ -68,6 +68,13 @@ int main() {
     next_entry(&dg);
     next_entry(&dg);
     next_entry(&dg);
+    next_entry(&dg);
+    next_entry(&dg);
+    next_entry(&dg);
+    next_entry(&dg);
+    next_entry(&dg);
+    next_entry(&dg);
+
 
     cur_dentry = get_current_entry(&dg);
     debug_ext2_dir_entry(&cur_dentry);
@@ -86,10 +93,11 @@ int main() {
     vfs.user_id = 0;
     vfs.group_id = 0;
     ext2_vfs_touch(&vfs, 0, "/", "windows_test2.cpp");
-    ext2_vfs_unlink(&vfs, "/", "file3.cpp");
+    //ext2_vfs_unlink(&vfs, "/", "file3.cpp");
     ext2_vfs_list(&vfs, "/");
     //ext2_vfs_unlink(&vfs, "/", "file2.cpp");
     printf("%d\n", is_inode_used(&current, 15));
+    debug_symlink(&current, read_inode(&current, 21));
 
     /*struct inode file1 = create_default_file(vfs.user_id, vfs.group_id, EXT2_S_IFREG);
     struct inode file2 = create_default_file(vfs.user_id, vfs.group_id, EXT2_S_IFREG);
