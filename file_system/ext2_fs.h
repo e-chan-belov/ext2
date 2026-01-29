@@ -69,3 +69,5 @@ struct inode read_inode(struct ext2_file_system *fs, __u32 inode);
 __u32 inode_alloc(struct ext2_file_system *fs, __u32 inode);
 __u32 free_inode(struct ext2_file_system *fs, __u32 inode);
 __u32 put_inode(struct ext2_file_system *fs, struct inode inode_, __u32 id);
+
+__u32 get_block_id_occupied_by_inode(struct ext2_file_system *fs, __u32 inode_id);

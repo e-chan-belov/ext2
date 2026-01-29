@@ -467,3 +467,10 @@ __u32 put_inode(struct ext2_file_system *fs, struct inode inode_, __u32 inode_id
     block_munmap(fs, ptr);
     return 0;
 }
+
+__u32 get_block_id_occupied_by_inode(struct ext2_file_system *fs, __u32 inode_id) {
+    __u32 block_group_index = (inode_id - 1) / fs->sb.s_inodes_per_group;
+    __u32 local_inode_index = (inode_id - 1) % fs->sb.s_inodes_per_group;
+    __u32 id = fs->bgdt[block_group_index].bg_inode_table + local_inode_index / (fs->block_size / fs->sb.s_inode_size);
+    return id;
+}

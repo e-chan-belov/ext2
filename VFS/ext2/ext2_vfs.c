@@ -292,7 +292,20 @@ __s32 ext2_vfs_ln(struct ext2_vfs *vfs, __u32 option, const char *path, const ch
             }
             ptr[i] = 0;
         } else {
+            struct inode_gate ig;
+            inode_gate_init(&ig, vfs->fs, &s_inode);
+            __u32 new_block_id = first_free_block(vfs->fs, get_block_id_occupied_by_inode(vfs->fs, id));
+            block_alloc(vfs->fs, new_block_id);
+            append_block(&ig, new_block_id);
 
+            char *ptr = block_mmap(vfs->fs, new_block_id);
+            int i = 0;
+            for (; i < len && i < get_block_size_from_fs(vfs->fs) - 1; i++) {
+                ptr[i] = path_to_target[i];
+            }
+            ptr[i] = 0;
+            block_munmap(vfs->fs, ptr);
+            inode_gate_destroy(&ig);
         }
         put_inode(vfs->fs, s_inode, id);
         add_new_entry(vfs->fs, dir_id, name, DR_SYMLINK, id);
