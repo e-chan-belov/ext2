@@ -14,9 +14,6 @@
 
 #define ROOT_DIR_INODE_ID 2
 
-#define DIR_TYPE_FILE 1
-#define DIR_TYPE_DIR 2
-
 struct ext2_vfs {
     struct ext2_file_system *fs;
     struct inode_table inode_table;

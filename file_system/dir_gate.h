@@ -4,6 +4,15 @@
 #include "dir_link.h"
 #include "__u32_stack.h"
 
+#define DR_UNKNOWN 0
+#define DR_REG_FILE 1
+#define DR_DIR 2
+#define DR_CHRDEV 3
+#define DR_BLKDEV 4
+#define DR_FIFO 5
+#define DR_SOCK 6
+#define DR_SYMLINK 7
+
 struct ext2_dir_entry {
 	__u32	inode;			// Inode number 
 	__u16	rec_len;		// Directory entry length
