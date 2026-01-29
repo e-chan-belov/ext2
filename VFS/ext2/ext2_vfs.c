@@ -148,7 +148,7 @@ static struct dir_entry_found_info find_inode_id_by_path(struct ext2_vfs *vfs, c
     };
     struct dir_entry_found_info nul_ans = temp;
     char *token = strtok(path_copy, "/");
-    while (token != NULL) {
+    while (token != NULL || parent.file_type == DR_SYMLINK) {
         if (parent.file_type == DR_SYMLINK) {
             char *sym_path = get_symlink_path(vfs, parent.inode);
             temp = find_inode_id_by_path(vfs, sym_path);
@@ -280,8 +280,20 @@ __s32 ext2_vfs_ln(struct ext2_vfs *vfs, __u32 option, const char *path, const ch
         add_new_entry(vfs->fs, dir_id, name, target.file_type, target.inode);
     } else { // symlink
         struct inode s_inode = create_default_file(vfs->user_id, vfs->group_id, EXT2_S_IFLNK);
-        __u32 id = inode_alloc(vfs->fs, dir_id);
-        // todo
+        __u32 id = first_free_inode(vfs->fs, dir_id);
+        inode_alloc(vfs->fs, id);
+        __u32 len = strlen(path_to_target);
+        s_inode.i_size = len;
+        if (len < 60) {
+            char *ptr = (char*)s_inode.i_block;
+            int i = 0;
+            for (; i < len; i++) {
+                ptr[i] = path_to_target[i];
+            }
+            ptr[i] = 0;
+        } else {
+
+        }
         put_inode(vfs->fs, s_inode, id);
         add_new_entry(vfs->fs, dir_id, name, DR_SYMLINK, id);
     }

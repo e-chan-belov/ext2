@@ -93,36 +93,16 @@ int main() {
     vfs.user_id = 0;
     vfs.group_id = 0;
     ext2_vfs_touch(&vfs, 0, "/", "windows_test2.cpp");
-    //ext2_vfs_unlink(&vfs, "/", "file3.cpp");
+    //ext2_vfs_unlink(&vfs, "/", "windows_test2.cpp");
     ext2_vfs_list(&vfs, "/");
     //ext2_vfs_unlink(&vfs, "/", "file2.cpp");
     printf("%d\n", is_inode_used(&current, 15));
     debug_symlink(&current, read_inode(&current, 21));
 
-    /*struct inode file1 = create_default_file(vfs.user_id, vfs.group_id, EXT2_S_IFREG);
-    struct inode file2 = create_default_file(vfs.user_id, vfs.group_id, EXT2_S_IFREG);
-    struct inode file3 = create_default_file(vfs.user_id, vfs.group_id, EXT2_S_IFREG);
-
-    __u32 inode_id1 = first_free_inode(&current, 12);
-    inode_alloc(vfs.fs, inode_id1);
-    put_inode(vfs.fs, file1, inode_id1);
-
-    __u32 inode_id2 = first_free_inode(&current, 12);
-    inode_alloc(vfs.fs, inode_id2);
-    put_inode(vfs.fs, file2, inode_id2);
-
-    __u32 inode_id3 = first_free_inode(&current, 12);
-    inode_alloc(vfs.fs, inode_id3);
-    put_inode(vfs.fs, file3, inode_id3);
-
-    add_new_entry(vfs.fs, 2, "file1.cpp", 1, inode_id1);
-    add_new_entry(vfs.fs, 2, "file2.cpp", 1, inode_id2);
-    add_new_entry(vfs.fs, 2, "file3.cpp", 1, inode_id3);*/
-
-
-    //create_default_dir(&vfs, 2, "test");
-    //printf("%u\n", find_inode_id_by_name_in_dir(&vfs, ".", 13));
+    //err = ext2_vfs_ln(&vfs, 1, "/", "s_root_test_dir", "/testdir1/testdir2/");
     
+    err = ext2_vfs_list(&vfs, "/s_root_test_dir/");
+
     ext2_file_system_destroy(&current);
     return 0;
 }
