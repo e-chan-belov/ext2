@@ -5,12 +5,14 @@
 #include "inode_gate.h"
 #include "file_desc.h"
 #include "inode_table.h"
+#include "range_list.h"
 
 #define FIRST_POTENTIAL_FD_NUMBER 3
 #define MAX_AMOUNT_OF_FD 1000000
 
 struct fd_table {
     struct rb_tree table;
+    struct range_list number_list;
     struct ext2_file_system *fs;
     struct inode_table *inode_table;
 };

@@ -2,6 +2,7 @@
 
 __u32 fd_table_init(struct fd_table *fd_table, struct inode_table *inode_table) {
     rb_tree_init(&fd_table->table);
+    range_list_init(&fd_table->number_list, FIRST_POTENTIAL_FD_NUMBER, MAX_AMOUNT_OF_FD - 1);
     fd_table->inode_table = inode_table;
     fd_table->fs = inode_table->fs;
     return 0;
@@ -9,21 +10,26 @@ __u32 fd_table_init(struct fd_table *fd_table, struct inode_table *inode_table) 
 
 __u32 fd_table_destroy(struct fd_table *fd_table) {
     rb_tree_destroy(&fd_table->table);
+    range_list_destroy(&fd_table->number_list);
     fd_table->fs = NULL;
     fd_table->inode_table = NULL;
     return 0;
 }
 
 static __u32 find_and_claim_fd_number(struct fd_table *fd_table) {
-    // todo
+    return range_list_claim_number(&fd_table->number_list);
 }
 
 static __u32 free_fd_number(struct fd_table *fd_table, __u32 fd) {
-    return 0; // todo
+    range_list_unclaim_number(&fd_table->number_list, fd);
+    return 0;
 }
 
 __u32 fd_table_open(struct fd_table *fd_table, __u32 inode_id, __u32 flags) {
     __u32 fd_number = find_and_claim_fd_number(fd_table);
+    if (fd_number < FIRST_POTENTIAL_FD_NUMBER) { // usually it happens when the number is zero
+        return 0;
+    }
 
     struct inode *active_inode = inode_table_link_inode(fd_table->inode_table, inode_id);
 
