@@ -21,11 +21,13 @@ __u8 inode_table_entry_are_links_empty(struct inode_table_entry *ite) {
 __u32 inode_table_init(struct inode_table* it, struct ext2_file_system *fs) {
     rb_tree_init(&(it->table));
     it->fs = fs;
+    return 0;
 }
 
 __u32 inode_table_destroy(struct inode_table* it) {
-    rb_tree_destroy(&(it->table));
+    rb_tree_destroy(&(it->table)); // deleted inodes are not put in the file system
     it->fs = NULL;
+    return 0;
 }
 
 struct inode* inode_table_link_inode(struct inode_table *it, __u32 id) {

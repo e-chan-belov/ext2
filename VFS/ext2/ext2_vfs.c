@@ -312,3 +312,13 @@ __s32 ext2_vfs_ln(struct ext2_vfs *vfs, __u32 option, const char *path, const ch
     }
     return 0;
 }
+
+__u32 ext2_vfs_open(struct ext2_vfs *vfs, const char *path, int flags) {
+    __u32 inode_id = find_inode_id_by_path(vfs, path).inode;
+    return fd_table_open(&vfs->fd_table, inode_id, flags);
+}
+
+__s32 ext2_vfs_close(struct ext2_vfs *vfs, __u32 fd) {
+    fd_table_close(&vfs->fd_table, fd);
+    return 0;
+}
