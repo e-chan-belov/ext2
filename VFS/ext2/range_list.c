@@ -70,7 +70,7 @@ __u32 range_list_unclaim_number(struct range_list *list, __u32 number) {
     while (right != NULL) {
         if (number + 1 == right->start) {
             right->start--;
-            if (left->end == right->start) {
+            if (left->end + 1 == right->start) {
                 struct range_node *temp = list->head;
                 if (temp == left) { list->head = merge(left, right); return 0; }
                 while (temp->next != left) { temp = temp->next; }
@@ -80,7 +80,7 @@ __u32 range_list_unclaim_number(struct range_list *list, __u32 number) {
         }
         else if (number - 1 == left->end) {
             left->end++;
-            if (left->end == right->start) {
+            if (left->end + 1 == right->start) {
                 struct range_node *temp = list->head;
                 if (temp == left) { list->head = merge(left, right); return 0; }
                 while (temp->next != left) { temp = temp->next; }
