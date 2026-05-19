@@ -37,7 +37,7 @@ __s32 ext2_vfs_unlink(struct ext2_vfs *vfs, const char *path, const char *name);
 __s32 ext2_vfs_ln(struct ext2_vfs *vfs, __u32 option, const char *path, const char *name, const char *path_to_target);
 
 __s32 ext2_vfs_touch(struct ext2_vfs *vfs, __u32 option, const char *path, const char *name);
-// __s32 ext2_vfs_chmod();
+// __s32 ext2_vfs_chmod();??
 
 __u32 ext2_vfs_open(struct ext2_vfs *vfs, const char *path, int flags);
 __s32 ext2_vfs_read(struct ext2_vfs *vfs, __u32 fd, void *buf, __u32 count);

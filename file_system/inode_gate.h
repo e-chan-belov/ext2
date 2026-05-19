@@ -35,7 +35,7 @@ __u32 get_current_block_number(struct inode_gate *ig);
 
 __u32 next_block(struct inode_gate *ig);
 __u32 prev_block(struct inode_gate *ig);
-__u32 move_by_offset(struct inode_gate *ig, __s32 offset);
+__u32 move_by_offset(struct inode_gate *ig, __s32 offset);  // in blocks
 __u32 move_to_first_block(struct inode_gate *ig);
 
 __u32 get_current_block_id(struct inode_gate *ig);

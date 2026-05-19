@@ -315,10 +315,20 @@ __s32 ext2_vfs_ln(struct ext2_vfs *vfs, __u32 option, const char *path, const ch
 
 __u32 ext2_vfs_open(struct ext2_vfs *vfs, const char *path, int flags) {
     __u32 inode_id = find_inode_id_by_path(vfs, path).inode;
-    return fd_table_open(&vfs->fd_table, inode_id, flags);
+    return fd_table_open(&vfs->fd_table, vfs->fs, inode_id, flags);
 }
 
 __s32 ext2_vfs_close(struct ext2_vfs *vfs, __u32 fd) {
-    fd_table_close(&vfs->fd_table, fd);
-    return 0;
+    return fd_table_close(&vfs->fd_table, fd);
+}
+
+__s32 ext2_vfs_read(struct ext2_vfs *vfs, __u32 fd, void *buf, __u32 count) {
+    return fd_table_read(&vfs->fd_table, fd, count, buf);
+}
+__s32 ext2_vfs_write(struct ext2_vfs *vfs, __u32 fd, const void *buf, __u32 count) {
+    return fd_table_write(&vfs->fd_table, fd, count, buf);
+}
+
+__s32 ext2_vfs_ftruncate(struct ext2_vfs *vfs, __u32 fd, __u32 length) {
+    return fd_table_ftruncate(&vfs->fd_table, fd, length);
 }
